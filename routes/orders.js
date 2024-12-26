@@ -1130,6 +1130,7 @@ app.post("/getFinancesById", (req, res, next) => {
    ,o.auto_create_invoice
    ,o.delivery_date
    ,o.delivery_terms
+     ,o.delivery_status
    ,o.cust_fax
    ,o.shipping_fax
    ,(select(sum(oi.cost_price))) as amount
@@ -1285,6 +1286,7 @@ app.post("/editFinances", (req, res, next) => {
               new Date().toISOString().slice(0, 19).replace("T", " ")
             )}
             ,delivery_terms=${db.escape(req.body.delivery_terms)}
+             ,delivery_status=${db.escape(req.body.delivery_status)}
             ,published=${db.escape(req.body.published)}
             WHERE order_id =  ${db.escape(req.body.order_id)}`,
     (err, result) => {

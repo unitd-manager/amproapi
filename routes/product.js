@@ -1522,6 +1522,9 @@ app.post("/getProduct", (req, res, next) => {
     ,p.carton_no
     ,p.batch_no
     ,p.vat
+    ,p.alternative_product_name
+    ,p.brand
+    ,p.keyword_search
     ,p.fc_price_code
     ,p.batch_import
     ,p.commodity_code
@@ -1708,6 +1711,10 @@ app.post("/edit-Product", (req, res, next) => {
             ,price=${db.escape(req.body.price)}
             ,qty_in_stock=${db.escape(req.body.qty_in_stock)}
            ,unit=${db.escape(req.body.unit)}
+            ,alternative_product_name=${db.escape(req.body.alternative_product_name)}
+            ,brand=${db.escape(req.body.brand)}
+           ,keyword_search=${db.escape(req.body.keyword_search)}
+            ,gst=${db.escape(req.body.gst)}
             ,description_short=${db.escape(req.body.description_short)}
             ,description=${db.escape(req.body.description)}
             ,product_description=${db.escape(req.body.product_description)}

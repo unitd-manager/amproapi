@@ -117,6 +117,7 @@ app.use(fileUpload({
 //         }
 //     }
 // } );
+
 app.post('/import/excel', (req, res) => {
   const { data } = req.body;
   const parsed_data = JSON.parse(data);
@@ -166,11 +167,21 @@ app.post('/import/excel', (req, res) => {
       }
 
       const item = parsed_data[index];
-
+         
+         connection.query(
+           'SELECT c.category_id, c.category_title FROM category c WHERE c.category_title = ?',
+           [item.Category],
+          (err, categoryResult) => {
+              if (err) {
+                  handleError(err, connection, res);
+                  return;
+              }
       // Insert into the product table
+            const categoryId = categoryResult.length > 0 ? categoryResult[0].category_id : null;
+
       connection.query(
-          "INSERT INTO product (`title`, `product_code`, `description`, `price`, `unit`, `product_type`, `qty_in_stock`) VALUES (?,?,?,?,?,?,?);",
-          [item.ProductName, item.ProductCode, item.Description, item.Price, item.Unit, item.Category, item.Stock],
+          "INSERT INTO product (`title`, `product_code`, `alternative_product_name`, `price`, `unit`, `product_type`, `qty_in_stock`,`category_id`,`keyword_search`,`brand`,`gst`) VALUES (?,?,?,?,?,?,?,?,?,?,?);",
+          [item.ProductName, item.ProductCode, item.AlternativeProductName, item.Price, item.Unit, item.Category, item.Stock,categoryId,item.Keyword,item.Brand,item.Gst],
           (err, productResult) => {
               if (err) {
                   handleError(err, connection, res);
@@ -194,6 +205,8 @@ app.post('/import/excel', (req, res) => {
               );
           }
       );
+          }
+          );
   }
 
   // Function to insert media records
@@ -241,7 +254,6 @@ app.post('/import/excel', (req, res) => {
       });
   }
 });
-
 
 
 app.get('/getinventoryMain', (req, res, next) => {
