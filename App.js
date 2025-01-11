@@ -77,9 +77,10 @@ const bank = require('./routes/bank.js');
 const leave = require('./routes/leave.js');
 const employee = require('./routes/employee.js');
 const training = require('./routes/training.js');
+const reports = require('./routes/reports.js');
 
 
-
+app.use('/reports', reports);
 app.use('/attendance', attendance);
 app.use('/product', product);
 app.use('/comment', comment);
