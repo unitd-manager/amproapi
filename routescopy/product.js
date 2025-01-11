@@ -230,8 +230,8 @@ app.get("/getAllProducts", (req, res, next) => {
     ,p.tag
     ,GROUP_CONCAT(m.file_name) AS images
     from product p
-     LEFT JOIN media m ON (p.product_id = m.record_id)
-     where p.product_id !=''
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
+     where p.product_id !='' AND p.published=1
    GROUP BY p.product_id `,
     (err, result) => {
       if (err) {
@@ -321,8 +321,8 @@ app.get("/getOfferProducts", (req, res, next) => {
     ,p.igst
     ,GROUP_CONCAT(m.file_name) AS images
     from product p
-     LEFT JOIN media m ON (p.product_id = m.record_id)
-     where p.discount_percentage !=''
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
+     where p.discount_percentage !='' AND p.published =1
    GROUP BY p.product_id `,
     (err, result) => {
       if (err) {
@@ -411,8 +411,8 @@ app.get("/getTopOfferProducts", (req, res, next) => {
     ,p.igst
     ,GROUP_CONCAT(m.file_name) AS images
     from product p
-     LEFT JOIN media m ON (p.product_id = m.record_id)
-     where p.discount_percentage !=''
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
+     where p.discount_percentage !='' AND p.published=1
    GROUP BY p.product_id 
    ORDER BY p.discount_percentage DESC`,
     (err, result) => {
@@ -439,7 +439,7 @@ app.get("/getLTHProducts", (req, res, next) => {
     `SELECT * 
     ,GROUP_CONCAT(m.file_name) AS images
     FROM product p 
-    LEFT JOIN media m ON (p.product_id = m.record_id)
+    LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
     where p.product_id !=''
    GROUP BY p.product_id
    ORDER BY p.price ASC LIMIT 3`,
@@ -532,7 +532,7 @@ app.post("/getProductBySubcategory", (req, res, next) => {
     ,sc.title
     from product p
      LEFT JOIN sub_category sc ON (c.sub_category_id = p.sub_category_id)
-     where p.sub_category_id= ${db.escape(req.body.sub_category_id)}`,
+     where p.sub_category_id= ${db.escape(req.body.sub_category_id)} AND p.published=1`,
     (err, result) => {
       if (err) {
         return res.status(400).send({
@@ -619,7 +619,7 @@ app.post("/getProductbyproductId", (req, res, next) => {
     ,p.tag
      ,GROUP_CONCAT(m.file_name) AS images
     from product p
-     LEFT JOIN media m ON (p.product_id = m.record_id)
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
     where p.product_id= ${db.escape(req.body.product_id)} 
      GROUP BY p.product_id`,
     (err, result) => {
@@ -709,8 +709,8 @@ app.post("/getProductbyCategoryId", (req, res, next) => {
     ,p.igst
      ,GROUP_CONCAT(m.file_name) AS images
     from product p
-     LEFT JOIN media m ON (p.product_id = m.record_id) 
-    where p.category_id= ${db.escape(req.body.category_id)}
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
+    where p.category_id= ${db.escape(req.body.category_id)} AND p.published=1
      GROUP BY p.product_id`,
     (err, result) => {
       if (err) {
@@ -800,8 +800,8 @@ app.post("/getProductsbyTag", (req, res, next) => {
     ,p.tag
      ,GROUP_CONCAT(m.file_name) AS images
     from product p
-     LEFT JOIN media m ON (p.product_id = m.record_id)
-    where p.tag = ${db.escape(req.body.tag)}
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
+    where p.tag = ${db.escape(req.body.tag)} AND p.published=1
      GROUP BY p.product_id`,
     (err, result) => {
       if (err) {
@@ -891,8 +891,8 @@ app.get("/getMostPopularProducts", (req, res, next) => {
     ,p.tag
      ,GROUP_CONCAT(m.file_name) AS images
     from product p
-     LEFT JOIN media m ON (p.product_id = m.record_id)
-    where p.most_popular !=''
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
+    where p.most_popular !='' AND p.published=1
      GROUP BY p.product_id`,
     (err, result) => {
       if (err) {
@@ -982,8 +982,8 @@ app.get("/getBestSellingProducts", (req, res, next) => {
     ,p.tag
      ,GROUP_CONCAT(m.file_name) AS images
     from product p
-     LEFT JOIN media m ON (p.product_id = m.record_id)
-    where p.top_seller !=''
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
+    where p.top_seller !='' AND p.published=1
      GROUP BY p.product_id`,
     (err, result) => {
       if (err) {
@@ -1073,8 +1073,8 @@ app.get("/getNewProducts", (req, res, next) => {
     ,p.tag
      ,GROUP_CONCAT(m.file_name) AS images
     from product p
-     LEFT JOIN media m ON (p.product_id = m.record_id)
-    where p.latest != ''
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
+    where p.latest != '' AND p.published=1
      GROUP BY p.product_id`,
     (err, result) => {
       if (err) {
@@ -1163,8 +1163,8 @@ app.post("/getProductsbySearch", (req, res, next) => {
     ,p.igst
     ,GROUP_CONCAT(m.file_name) AS images
     from product p
-     LEFT JOIN media m ON (p.product_id = m.record_id)
-    where p.title LIKE CONCAT('%', ${db.escape(req.body.keyword)}, '%') 
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
+    where p.title LIKE CONCAT('%', ${db.escape(req.body.keyword)}, '%') AND p.published=1 
      GROUP BY p.product_id`,
     (err, result) => {
       if (err) {
@@ -1253,8 +1253,8 @@ app.post("/getOffersProductsbySearch", (req, res, next) => {
     ,p.igst
     ,GROUP_CONCAT(m.file_name) AS images
     from product p
-     LEFT JOIN media m ON (p.product_id = m.record_id) 
-    where p.discount_percentage !='' AND p.title LIKE CONCAT('%', ${db.escape(req.body.keyword)}, '%') 
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
+    where p.discount_percentage !='' AND p.title LIKE CONCAT('%', ${db.escape(req.body.keyword)}, '%') AND p.published=1
      GROUP BY p.product_id`,
     (err, result) => {
       if (err) {
@@ -1312,8 +1312,8 @@ app.get("/getProducts", (req, res, next) => {
   ,p.tag
    ,GROUP_CONCAT(m.file_name) AS images
     from product p
-     LEFT JOIN media m ON (p.product_id = m.record_id)
-    where p.product_id != ''
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
+    where p.product_id != '' AND p.published=1
      GROUP BY p.product_id `,
     (err, result) => {
       if (err) {
@@ -1371,7 +1371,7 @@ app.get("/getProductAdmin", (req, res, next) => {
   ,i.inventory_id
    ,GROUP_CONCAT(m.file_name) AS images
     from product p
-     LEFT JOIN media m ON (p.product_id = m.record_id) 
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
      LEFT JOIN inventory i ON p.product_id = i.product_id
     where p.product_id != ''
      GROUP BY p.product_id `,
@@ -1466,8 +1466,8 @@ app.post("/getProductCategoryTitle", (req, res, next) => {
      ,GROUP_CONCAT(m.file_name) AS images
     from product p
      LEFT JOIN category c ON p.category_id = c.category_id
-     LEFT JOIN media m ON (p.product_id = m.record_id) 
-    where c.category_id = ${db.escape(req.body.category_id)} 
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
+    where c.category_id = ${db.escape(req.body.category_id)}  AND p.published=1
      GROUP BY p.product_id`,
     (err, result) => {
       if (err) {
@@ -1562,7 +1562,7 @@ app.post("/getProduct", (req, res, next) => {
     ,p.modified_by
      ,GROUP_CONCAT(m.file_name) AS images
     from product p
-     LEFT JOIN media m ON (p.product_id = m.record_id)
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
     where p.product_id = ${db.escape(req.body.product_id)}
      GROUP BY p.product_id`,
     (err, result) => {

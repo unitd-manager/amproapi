@@ -400,8 +400,8 @@ app.post("/getProductByCategory", (req, res, next) => {
      ,GROUP_CONCAT(m.file_name) AS images
      from category c
      LEFT JOIN product p  ON (p.category_id = c.category_id)
-     LEFT JOIN media m ON (p.product_id = m.record_id)
-    where c.category_id= ${db.escape(req.body.category_id)}
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
+    where c.category_id= ${db.escape(req.body.category_id)} AND p.published=1
    GROUP BY p.product_id`,
     (err, result) => {
       if (err) {
@@ -491,8 +491,8 @@ app.post("/getOfferProductByCategory", (req, res, next) => {
      ,GROUP_CONCAT(m.file_name) AS images
      from category c
      LEFT JOIN product p  ON (p.category_id = c.category_id)
-     LEFT JOIN media m ON (p.product_id = m.record_id) 
-    where c.category_id= ${db.escape(req.body.category_id)} AND p.discount_percentage!=''
+     LEFT JOIN media m ON (p.product_id = m.record_id) AND (m.room_name='product')
+    where c.category_id= ${db.escape(req.body.category_id)} AND p.discount_percentage!='' AND p.published=1
    GROUP BY p.product_id`,
     (err, result) => {
       if (err) {

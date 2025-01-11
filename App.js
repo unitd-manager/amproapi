@@ -15,8 +15,8 @@ var credentials = {key: privateKey, cert: certificate};
 
 var httpServer = http.createServer(app);
 var httpsServer = https.createServer(credentials, app);
-let port = 2027;
-let secureport = 2028;
+let port = 2056;
+let secureport = 2057;
 httpServer.listen(port, () => {
     console.log(`Server Running in port:${port}`);
   });
@@ -47,6 +47,7 @@ app.use(flash());
 const attendance = require('./routes/attendance.js');
 const product = require('./routes/product.js');
 const comment = require('./routes/comment.js');
+const company = require('./routes/company.js');
 const orders = require('./routes/orders.js');
 const content = require('./routes/content.js');
 const setting = require('./routes/setting.js');
@@ -68,10 +69,21 @@ const note = require('./routes/note.js');
 const supplier = require('./routes/supplier.js');
 const geocountry = require('./routes/geocountry.js');
 const inventory = require('./routes/inventory.js');
+const employeeModule = require('./routes/employeeModule.js');
+const payrollmanagement = require('./routes/payrollmanagement.js');
+const jobinformation = require('./routes/jobinformation.js');
+const loan = require('./routes/loan.js');
+const bank = require('./routes/bank.js');
+const leave = require('./routes/leave.js');
+const employee = require('./routes/employee.js');
+const training = require('./routes/training.js');
+
+
 
 app.use('/attendance', attendance);
 app.use('/product', product);
 app.use('/comment', comment);
+app.use('/company', company);
 app.use('/orders', orders);
 app.use('/category', category);
 app.use('/setting', setting);
@@ -93,6 +105,15 @@ app.use('/note', note);
 app.use('/supplier', supplier);
 app.use('/geocountry', geocountry);
 app.use('/inventory', inventory);
+app.use('/jobinformation', jobinformation);
+app.use('/payrollmanagement', payrollmanagement);
+app.use('/employeeModule',employeeModule);
+app.use('/training', training);
+app.use('/employee', employee);
+app.use('/leave', leave);
+app.use('/loan', loan);
+app.use('/bank', bank);
+
 
 const indexRouter = require('./routes/fileUpload'); 
 app.use('/file', indexRouter);

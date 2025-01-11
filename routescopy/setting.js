@@ -321,65 +321,6 @@ app.get('/getSettingsForGoogleMap', (req, res, next) => {
 });
 
 
-
-app.get('/getRazorpayLiveKey', (req, res, next) => {
-  db.query(`SELECT * FROM setting WHERE key_text="razorpaylivekey"`,
-  (err, result) => {
-    if (err) {
-      console.log('error: ', err)
-      return res.status(400).send({
-        data: err,
-        msg: 'failed',
-      })
-    } else {
-      return res.status(200).send({
-        data: result,
-        msg: 'Success',
-})
-}
-  }
-);
-});
-
-app.get('/getRazorpayTestKey', (req, res, next) => {
-  db.query(`SELECT * FROM setting WHERE key_text="razorpaytestkey"`,
-  (err, result) => {
-    if (err) {
-      console.log('error: ', err)
-      return res.status(400).send({
-        data: err,
-        msg: 'failed',
-      })
-    } else {
-      return res.status(200).send({
-        data: result,
-        msg: 'Success',
-})
-}
-  }
-);
-});
-
-app.get('/getPaymentmode', (req, res, next) => {
-  db.query(`SELECT * FROM setting WHERE key_text="paymentmode"`,
-  (err, result) => {
-    if (err) {
-      console.log('error: ', err)
-      return res.status(400).send({
-        data: err,
-        msg: 'failed',
-      })
-    } else {
-      return res.status(200).send({
-        data: result,
-        msg: 'Success',
-})
-}
-  }
-);
-});
-
-
 app.post('/deleteSetting', (req, res, next) => {
 
   let data = {setting_id: req.body.setting_id};

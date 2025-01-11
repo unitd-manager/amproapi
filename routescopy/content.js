@@ -562,6 +562,7 @@ app.post("/insertContent", (req, res, next) => {
     latest: req.body.latest,
     favourite: req.body.favourite,
     creation_date: req.body.creation_date,
+    created_by: req.body,created_by,
     modification_date: req.body.modification_date,
     content_date: req.body.content_date,
     chi_title: req.body.chi_title,
