@@ -13,6 +13,29 @@ app.use(
 );
 
 
+app.get("/getBanners", (req, res, next) => {
+  db.query(
+    `select c.title, c.description ,m.file_name,m.display_title, c.content_id
+    from content c 
+    LEFT Join media m ON m.record_id=c.content_id 
+    WHERE c.content_type= "Banner Image" AND m.room_name='Content'
+    ORDER BY c.content_id DESC`,
+    (err, result) => {
+      if (err) {
+        console.log("error: ", err);
+        return res.status(400).send({
+          data: err,
+          msg: "failed",
+        });
+      } else {
+        return res.status(200).send({
+          data: result,
+          msg: "Success",
+        });
+      }
+    }
+  );
+});
 
 app.get("/getContent", (req, res, next) => {
   db.query(
