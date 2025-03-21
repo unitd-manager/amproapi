@@ -78,6 +78,10 @@ const leave = require('./routes/leave.js');
 const employee = require('./routes/employee.js');
 const training = require('./routes/training.js');
 const reports = require('./routes/reports.js');
+const salesOrder = require('./routes/salesOrder.js');
+const salesItem = require('./routes/salesItem.js');
+const currency = require('./routes/currency.js');
+const invoice = require('./routes/invoice.js');
 
 
 app.use('/reports', reports);
@@ -114,6 +118,10 @@ app.use('/employee', employee);
 app.use('/leave', leave);
 app.use('/loan', loan);
 app.use('/bank', bank);
+app.use('/salesOrder', salesOrder);
+app.use('/salesItem', salesItem);
+app.use('/currency', currency);
+app.use('/invoice', invoice);
 
 
 const indexRouter = require('./routes/fileUpload'); 
