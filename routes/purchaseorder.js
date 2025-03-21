@@ -35,6 +35,18 @@ app.get('/TabPurchaseOrder', (req, res, next) => {
   ,po.payment_status
   ,po.supplier_inv_code
   ,po.po_code
+   ,po.tran_no 
+	,po.tran_date 
+    ,po.contact_address1  	
+    ,po.contact_address2	
+    ,po.contact_address3 		
+    ,po.country 	
+	,po.remarks 		
+    ,po.req_delivery_date 	
+	,po.contact_person
+	,po.supplier_code
+		,po.sub_total
+			,po.net_total
   ,s.company_name
   FROM purchase_order po 
   LEFT JOIN (supplier s) ON (po.supplier_id = s.supplier_id) WHERE po.purchase_order_id != ''  ORDER BY po.purchase_order_id ASC;`,
@@ -52,24 +64,35 @@ app.get('/TabPurchaseOrder', (req, res, next) => {
   }
 );
 });
-app.post('/getPurchaseOrders', (req, res, next) => {
+app.get('/getPurchaseOrders', (req, res, next) => {
   db.query(`SELECT 
-  po.purchase_order_id 
-  ,CONCAT('Purchase from',' ',s.company_name ) AS title
-  ,po.status
-  ,po.supplier_id
-  ,po.priority
-  ,po.notes
-  ,po.purchase_order_date
-  ,po.creation_date
-  ,po.follow_up_date
-  ,po.delivery_terms
-  ,po.payment_terms
-  ,po.payment_status
-  ,po.supplier_inv_code
-  ,po.po_code
+  po.*
+  ,s.company_name AS supplier_name
   FROM purchase_order po 
+   LEFT JOIN (supplier s) ON (po.supplier_id = s.supplier_id) 
   ORDER BY po.purchase_order_id ASC;`,
+  (err, result) => {
+    if (err) {
+      return res.status(400).send({
+        data: err,
+      });
+    } else {
+      return res.status(200).send({
+        data: result,
+        msg: "Success",
+      });
+    }
+  }
+);
+});
+
+app.get('/getGoodsReceipts', (req, res, next) => {
+  db.query(`SELECT 
+  po.*
+  ,s.company_name AS supplier_name
+  FROM goods_receipt po 
+   LEFT JOIN (supplier s) ON (po.supplier_id = s.supplier_id) 
+  ORDER BY po.goods_receipt_id ASC;`,
   (err, result) => {
     if (err) {
       return res.status(400).send({
@@ -114,9 +137,88 @@ app.post('/getPurchaseOrderById', (req, res, next) => {
   ,po.mobile
   ,po.project
   ,po.shipping_method
+  ,po.tran_no 
+	,po.tran_date 
+    ,po.contact_address1  	
+    ,po.contact_address2	
+    ,po.contact_address3 		
+    ,po.country 	
+	,po.remarks 		
+    ,po.req_delivery_date 	
+	,po.contact_person
+	,po.supplier_code
+	,po.postal_code
+		,po.sub_total
+			,po.net_total
+				,po.tax_amount
   ,s.company_name AS supplier_name
   FROM purchase_order po 
   LEFT JOIN (supplier s) ON (po.supplier_id = s.supplier_id) WHERE po.purchase_order_id = ${db.escape(req.body.purchase_order_id)}`,
+  (err, result) => {
+    if (err) {
+      return res.status(400).send({
+        data: err,
+      });
+    } else {
+      return res.status(200).send({
+        data: result,
+        msg: "Success",
+      });
+   }
+  }
+);
+});
+
+app.post('/getGoodsReceiptById', (req, res, next) => {
+  db.query(`SELECT
+  po.goods_receipt_id 
+  ,CONCAT('Purchase from',' ',s.company_name ) AS title
+  ,po.status
+  ,po.supplier_id
+  ,po.priority
+  ,po.notes
+  ,po.purchase_order_date
+  ,po.creation_date
+  ,po.modification_date
+  ,po.follow_up_date
+  ,po.delivery_terms
+  ,po.payment_terms
+  ,po.supplier_reference_no
+  ,po.our_reference_no
+  ,po.shipping_address_flat
+  ,po.shipping_address_street
+  ,po.shipping_address_country
+  ,po.shipping_address_po_code
+  ,po.payment_status
+  ,po.supplier_inv_code
+  ,po.po_code
+  ,po.payment
+  ,po.contact
+  ,po.delivery_to
+  ,po.mobile
+  ,po.project
+  ,po.shipping_method
+  ,po.tran_no 
+	,po.tran_date 
+    ,po.contact_address1  	
+    ,po.contact_address2	
+    ,po.contact_address3 		
+    ,po.country 	
+	,po.remarks 		
+    ,po.req_delivery_date 	
+	,po.contact_person
+	,po.supplier_code
+	,po.postal_code
+		,po.sub_total
+			,po.net_total
+				,po.tax_amount
+				,po.invoice_date
+		,po.invoice_no
+			,po.do_no
+				,po.delivery_date
+  ,s.company_name AS supplier_name
+  FROM goods_receipt po 
+  LEFT JOIN (supplier s) ON (po.supplier_id = s.supplier_id) WHERE po.goods_receipt_id = ${db.escape(req.body.goods_receipt_id)}`,
   (err, result) => {
     if (err) {
       return res.status(400).send({
@@ -181,6 +283,19 @@ app.post('/editTabPurchaseOrder', (req, res, next) => {
             ,payment=${db.escape(req.body.payment)}
             ,project=${db.escape(req.body.project)}
             ,shipping_method=${db.escape(req.body.shipping_method)}
+            ,tran_no=${db.escape(req.body.tran_no)}
+	        ,tran_date=${db.escape(req.body.tran_date)}
+            ,contact_address1=${db.escape(req.body.contact_address1 )} 	
+            ,contact_address2=${db.escape(req.body.contact_address2	)}
+            ,contact_address3 =${db.escape(req.body.contact_address3)}		
+            ,country=${db.escape(req.body.country)}
+          	,remarks =${db.escape(req.body.remarks)}
+            ,req_delivery_date =${db.escape(req.body.req_delivery_date)}	
+	        ,contact_person =${db.escape(req.body.contact_person)}
+	        ,supplier_code=${db.escape(req.body.supplier_code)}
+	        ,postal_code=${db.escape(req.body.postal_code)}
+	             ,sub_total=${db.escape(req.body.sub_total)}
+	        ,net_total=${db.escape(req.body.net_total)}
             WHERE purchase_order_id = ${db.escape(req.body.purchase_order_id)}`,
             (err, result) => {
               if (err) {
@@ -196,6 +311,61 @@ app.post('/editTabPurchaseOrder', (req, res, next) => {
             }
          );
   });
+  
+  app.post('/editGoodsReceipt', (req, res, next) => {
+  db.query(`UPDATE goods_receipt
+             SET title=${db.escape(req.body.title)}
+            ,notes=${db.escape(req.body.notes)}
+            ,gst=${db.escape(req.body.gst)}
+            ,po_code=${db.escape(req.body.po_code)}
+            ,purchase_order_date=${db.escape(req.body.purchase_order_date)}
+            ,follow_up_date=${db.escape(req.body.follow_up_date)}
+            ,delivery_terms=${db.escape(req.body.delivery_terms)}
+            ,payment_terms=${db.escape(req.body.payment_terms)}
+            ,supplier_inv_code=${db.escape(req.body.supplier_inv_code)}
+            ,status=${db.escape(req.body.status)}
+            ,payment_status=${db.escape(req.body.payment_status)}
+            ,modification_date=${db.escape(new Date())}
+            ,supplier_id=${db.escape(req.body.supplier_id)}
+            ,delivery_to=${db.escape(req.body.delivery_to)}
+            ,delivery_date=${db.escape(req.body.delivery_date)}
+            ,contact=${db.escape(req.body.contact)}
+            ,mobile=${db.escape(req.body.mobile)}
+            ,payment=${db.escape(req.body.payment)}
+            ,project=${db.escape(req.body.project)}
+            ,shipping_method=${db.escape(req.body.shipping_method)}
+            ,tran_no=${db.escape(req.body.tran_no)}
+	        ,tran_date=${db.escape(req.body.tran_date)}
+            ,contact_address1=${db.escape(req.body.contact_address1 )} 	
+            ,contact_address2=${db.escape(req.body.contact_address2	)}
+            ,contact_address3 =${db.escape(req.body.contact_address3)}		
+            ,country=${db.escape(req.body.country)}
+          	,remarks =${db.escape(req.body.remarks)}
+            ,req_delivery_date =${db.escape(req.body.req_delivery_date)}	
+	        ,contact_person =${db.escape(req.body.contact_person)}
+	        ,supplier_code=${db.escape(req.body.supplier_code)}
+	        ,postal_code=${db.escape(req.body.postal_code)}
+	             ,sub_total=${db.escape(req.body.sub_total)}
+	        ,net_total=${db.escape(req.body.net_total)}
+	        	,po.invoice_date=${db.escape(req.body.invoice_date)}
+		,po.invoice_no=${db.escape(req.body.invoice_no)}
+			,po.do_no=${db.escape(req.body.do_no)}
+            WHERE goods_receipt_id = ${db.escape(req.body.goods_receipt_id)}`,
+            (err, result) => {
+              if (err) {
+                return res.status(400).send({
+                  data: err,
+                });
+              } else {
+                return res.status(200).send({
+                  data: result,
+                  msg: "Success",
+                });
+              }
+            }
+         );
+  });
+  
   
 app.post('/insertPurchaseOrder', (req, res, next) => {
 
@@ -236,9 +406,93 @@ app.post('/insertPurchaseOrder', (req, res, next) => {
    , mobile: req.body.mobile
    , payment: req.body.payment
    , project: req.body.project
-    
+   ,tran_no :req.body.tran_no
+	,tran_date :req.body.tran_date
+,contact_address1:req.body.contact_address1  	
+,contact_address2:req.body.contact_address2	
+,contact_address3 :req.body.contact_address3		
+,country:req.body.country
+	,remarks :req.body.remarks	
+        ,req_delivery_date :req.body.req_delivery_date	
+	,contact_person :req.body.contact_person
+, supplier_code: req.body.supplier_code
+, postal_code: req.body.postal_code
+, sub_total: req.body.sub_total
+, net_total: req.body.net_total
  };
   let sql = "INSERT INTO purchase_order SET ?";
+  let query = db.query(sql, data,(err, result) => {
+    if (err) {
+      return res.status(400).send({
+        data: err,
+      });
+    } else {
+      return res.status(200).send({
+        data: result,
+        msg: "Success",
+      });
+    }
+  }
+);
+});
+
+app.post('/insertGoodsReceipt', (req, res, next) => {
+
+  let data = {po_code:req.body.po_code
+   , supplier_id: req.body.supplier_id
+   , contact_id_supplier: req.body.contact_id_supplier
+   , delivery_terms: req.body.delivery_terms
+   , status: req.body.status
+   , project_id: req.body.project_id
+   , flag: req.body.flag
+   , creation_date: req.body.creation_date
+   , modification_date: req.body.modification_date
+   , created_by: req.body.created_by
+   , modified_by: req.body.modified_by
+   , supplier_reference_no: req.body.supplier_reference_no
+   , our_reference_no	: req.body.our_reference_no	
+   , shipping_method: req.body.shipping_method
+   , payment_terms: req.body.payment_terms
+   , delivery_date: req.body.delivery_date
+   , po_date: req.body.mr_date
+   , shipping_address_flat: req.body.shipping_address_flat
+   , shipping_address_street: req.body.shipping_address_street
+   , shipping_address_country: req.body.shipping_address_country
+   , shipping_address_po_code: req.body.shipping_address_po_code
+   , expense_id: req.body.expense_id
+   , staff_id: req.body.staff_id
+   , purchase_order_date: req.body.purchase_order_date
+   , payment_status: "Due"
+   , title: req.body.title
+   , priority: req.body.priority
+   , follow_up_date: req.body.follow_up_date
+   , notes: req.body.notes
+   , supplier_inv_code: req.body.supplier_inv_code
+   , gst: req.body.gst
+   , gst_percentage: req.body.gst_percentage
+   , delivery_to: req.body.delivery_to
+   , contact: req.body.contact
+   , mobile: req.body.mobile
+   , payment: req.body.payment
+   , project: req.body.project
+   ,tran_no :req.body.tran_no
+	,tran_date :req.body.tran_date
+,contact_address1:req.body.contact_address1  	
+,contact_address2:req.body.contact_address2	
+,contact_address3 :req.body.contact_address3		
+,country:req.body.country
+	,remarks :req.body.remarks	
+        ,req_delivery_date :req.body.req_delivery_date	
+	,contact_person :req.body.contact_person
+, supplier_code: req.body.supplier_code
+, postal_code: req.body.postal_code
+, sub_total: req.body.sub_total
+, net_total: req.body.net_total
+	,invoice_date:req.body.invoice_date
+		,invoice_no:req.body.invoice_no
+			,do_no:req.body.do_no
+ };
+  let sql = "INSERT INTO goods_receipt SET ?";
   let query = db.query(sql, data,(err, result) => {
     if (err) {
       return res.status(400).send({
@@ -308,13 +562,15 @@ app.get('/TabPurchaseOrderLineItem', (req, res, next) => {
   }
 );
 });
+
 app.post('/TabPurchaseOrderLineItemById', (req, res, next) => {
   db.query(`SELECT
   p.item_code
+   ,p.product_code
   ,p.qty_in_stock
   ,po.product_id
   ,po.po_product_id
-  ,p.title
+  ,p.title AS product_name
   ,po.item_title
   ,po.description
   ,po.amount
@@ -328,6 +584,10 @@ app.post('/TabPurchaseOrderLineItemById', (req, res, next) => {
   ,po.status
   ,po.damage_qty
   ,po.qty_delivered
+  , po.price
+    , po.carton_qty
+    , po.loose_qty
+    , po.carton_price
   ,i.actual_stock AS stock
   ,(po.cost_price*po.quantity) AS po_value FROM po_product po
   LEFT JOIN (product p) ON (po.product_id = p.product_id) 
@@ -348,6 +608,53 @@ app.post('/TabPurchaseOrderLineItemById', (req, res, next) => {
   }
 );
 });
+
+app.post('/TabCsProductsLineItemById', (req, res, next) => {
+  db.query(`SELECT
+  p.item_code
+   ,p.product_code
+  ,p.qty_in_stock
+  ,po.product_id
+  ,po.po_product_id
+  ,p.title AS product_name
+  ,po.item_title
+  ,po.description
+  ,po.amount
+  ,po.selling_price
+  ,po.cost_price
+  ,(po.qty-po.qty_delivered) AS qty_balance
+  ,po.gst
+  ,po.qty
+  ,(po.cost_price*po.qty_delivered) AS actual_value 
+  ,po.price
+  ,po.status
+  ,po.damage_qty
+  ,po.qty_delivered
+  , po.price
+    , po.carton_qty
+    , po.loose_qty
+    , po.carton_price
+  ,i.actual_stock AS stock
+  ,(po.cost_price*po.quantity) AS po_value FROM cs_product po
+  LEFT JOIN (product p) ON (po.product_id = p.product_id) 
+  LEFT JOIN (inventory i) ON (i.inventory_id = p.product_id) 
+  WHERE po.cs_product_id = ${db.escape(req.body.cs_product_id)}
+  `,
+  (err, result) => {
+    if (err) {
+      return res.status(400).send({
+        data: err,
+      });
+    } else {
+      return res.status(200).send({
+        data: result,
+        msg: "Success",
+      });
+    }
+  }
+);
+});
+
 
 app.post('/editTabPurchaseOrderLineItem', (req, res, next) => {
   db.query(`UPDATE po_product
@@ -379,6 +686,65 @@ app.post('/editTabPurchaseOrderLineItem', (req, res, next) => {
             }
           );
        });
+       
+       
+       app.post('/editPoProduct', (req, res, next) => {
+  db.query(`UPDATE po_product
+            SET discount=${db.escape(req.body.discount)}
+            ,total=${db.escape(req.body.total)}
+            ,amount=${db.escape(req.body.amount)}
+            ,item_title=${db.escape(req.body.item_title)}
+            ,qty=${db.escape(req.body.qty)}
+             ,carton_price=${db.escape(req.body.carton_price)}
+            ,price=${db.escape(req.body.price)}
+            ,loose_qty=${db.escape(req.body.loose_qty)}
+            ,carton_qty=${db.escape(req.body.carton_qty)}
+            ,status=${db.escape(req.body.status)}
+            WHERE po_product_id = ${db.escape(req.body.po_product_id)}`,
+            (err, result) => {
+              if (err) {
+                return res.status(400).send({
+                  data: err,
+                });
+              } else {
+                return res.status(200).send({
+                  data: result,
+                  msg: "Success",
+                });
+              }
+            }
+          );
+       });
+       
+       
+             app.post('/editCsProduct', (req, res, next) => {
+  db.query(`UPDATE cs_product
+            SET discount=${db.escape(req.body.discount)}
+            ,total=${db.escape(req.body.total)}
+            ,amount=${db.escape(req.body.amount)}
+            ,item_title=${db.escape(req.body.item_title)}
+            ,qty=${db.escape(req.body.qty)}
+             ,carton_price=${db.escape(req.body.carton_price)}
+            ,price=${db.escape(req.body.price)}
+            ,loose_qty=${db.escape(req.body.loose_qty)}
+            ,carton_qty=${db.escape(req.body.carton_qty)}
+            ,status=${db.escape(req.body.status)}
+            WHERE cs_product_id = ${db.escape(req.body.cs_product_id)}`,
+            (err, result) => {
+              if (err) {
+                return res.status(400).send({
+                  data: err,
+                });
+              } else {
+                return res.status(200).send({
+                  data: result,
+                  msg: "Success",
+                });
+              }
+            }
+          );
+       });
+
 
 app.get("/getMaxItemCode", (req, res, next) => {
   db.query(
@@ -444,6 +810,103 @@ app.post('/insertPoProduct', (req, res, next) => {
   }
 );
 });
+
+
+app.post('/insertPoProducts', (req, res, next) => {
+
+  let data = {
+    purchase_order_id:req.body.purchase_order_id
+     ,item_title: req.body.item_title
+     ,product_id:req.body.product_id
+    , quantity: req.body.quantity
+    , unit: req.body.unit
+    , amount: req.body.amount
+    , description: req.body.description??'desc'
+    , creation_date: new Date()
+    , created_by: req.body.created_by
+    , modified_by: req.body.modified_by
+    , status: req.body.status
+    , cost_price	: req.body.cost_price	
+    , selling_price: req.body.selling_price
+    , qty_updated: req.body.qty_updated
+    , qty: req.body.qty
+    , product_id: req.body.product_id
+    , supplier_id: 0
+    , gst:req.body.gst
+    , damage_qty: req.body.damage_qty
+    , brand: req.body.brand
+    , qty_requested: req.body.qty_requested
+    , qty_delivered: req.body.qty_delivered
+    , price: req.body.price??0
+    , carton_qty: req.body.carton_qty??0
+    , loose_qty: req.body.loose_qty??0
+    , carton_price: req.body.carton_price??0
+ };
+ console.log(data)
+  let sql = "INSERT INTO po_product SET ?";
+  let query = db.query(sql, data,(err, result) => {
+    if (err) {
+      return res.status(400).send({
+        data: err,
+      });
+    } else {
+      return res.status(200).send({
+        data: result,
+        msg: "Success",
+      });
+    }
+  }
+);
+});
+
+
+app.post('/insertCsProducts', (req, res, next) => {
+
+  let data = {
+    goods_receipt_id:req.body.goods_receipt_id
+     ,item_title: req.body.item_title
+     ,product_id:req.body.product_id
+    , quantity: req.body.quantity
+    , unit: req.body.unit
+    , amount: req.body.amount
+    , description: req.body.description??'desc'
+    , creation_date: new Date()
+    , created_by: req.body.created_by
+    , modified_by: req.body.modified_by
+    , status: req.body.status
+    , cost_price	: req.body.cost_price	
+    , selling_price: req.body.selling_price
+    , qty_updated: req.body.qty_updated
+    , qty: req.body.qty
+    , product_id: req.body.product_id
+    , supplier_id:req.body.supplier_id??0
+    , gst:req.body.gst
+    , damage_qty: req.body.damage_qty
+    , brand: req.body.brand
+    , qty_requested: req.body.qty_requested
+    , qty_delivered: req.body.qty_delivered
+    , price: req.body.price??0
+    , carton_qty: req.body.carton_qty??0
+    , loose_qty: req.body.loose_qty??0
+    , carton_price: req.body.carton_price??0
+ };
+ console.log(data)
+  let sql = "INSERT INTO cs_product SET ?";
+  let query = db.query(sql, data,(err, result) => {
+    if (err) {
+      return res.status(400).send({
+        data: err,
+      });
+    } else {
+      return res.status(200).send({
+        data: result,
+        msg: "Success",
+      });
+    }
+  }
+);
+});
+
 
  app.post('/deletePoProduct', (req, res, next) => {
 

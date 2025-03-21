@@ -15,8 +15,8 @@ var credentials = {key: privateKey, cert: certificate};
 
 var httpServer = http.createServer(app);
 var httpsServer = https.createServer(credentials, app);
-let port = 2056;
-let secureport = 2057;
+let port = 2003;
+let secureport = 2004;
 httpServer.listen(port, () => {
     console.log(`Server Running in port:${port}`);
   });

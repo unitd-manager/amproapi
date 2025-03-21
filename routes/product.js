@@ -53,6 +53,46 @@ FROM product `,
   );
 });
 
+
+app.get("/product/getAllPaginationProducts", (req, res) => {
+  let { page = 1, limit = 20, search = "" } = req.query;
+  page = parseInt(page);
+  limit = parseInt(limit);
+  const offset = (page - 1) * limit;
+
+  // Search filter
+  let searchQuery = "";
+  if (search) {
+    searchQuery = `AND title LIKE ?`;
+  }
+
+  // Count total products
+  const countQuery = `SELECT COUNT(*) AS total FROM products WHERE 1 ${searchQuery}`;
+  const countParams = search ? [`%${search}%`] : [];
+
+  db.query(countQuery, countParams, (err, countResult) => {
+    if (err) return res.status(500).json({ error: "Database error" });
+
+    const totalRecords = countResult[0].total;
+    const totalPages = Math.ceil(totalRecords / limit);
+
+    // Fetch paginated products
+    const query = `SELECT * FROM products WHERE 1 ${searchQuery} LIMIT ? OFFSET ?`;
+    const queryParams = search ? [`%${search}%`, limit, offset] : [limit, offset];
+
+    db.query(query, queryParams, (err, results) => {
+      if (err) return res.status(500).json({ error: "Database error" });
+
+      res.json({
+        data: results,
+        totalRecords,
+        totalPages,
+        currentPage: page,
+      });
+    });
+  });
+});
+
 app.post("/getProductsPagination", (req, res, next) => {
 
   var limit = req.body.length;
@@ -164,6 +204,7 @@ app.get("/getAllProducts", (req, res, next) => {
   db.query(
     `select  p.title
      ,p.category_id
+      ,p.product_code
     ,p.product_id
     ,p.sub_category_id
     ,p.product_code
@@ -1279,7 +1320,7 @@ app.get("/getProducts", (req, res, next) => {
     `SELECT DISTINCT p.product_id
   ,p.category_id
   ,p.sub_category_id
-  ,p.title
+  ,p.title AS product_name
   ,p.description,
   p.qty_in_stock
   ,p.price

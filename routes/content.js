@@ -12,7 +12,6 @@ app.use(
   })
 );
 
-
 app.get("/getBanners", (req, res, next) => {
   db.query(
     `select c.title, c.description ,m.file_name,m.display_title, c.content_id
