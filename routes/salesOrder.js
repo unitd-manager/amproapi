@@ -123,7 +123,6 @@ app.post('/insertSalesOrder', (req, res, next) => {
     , modification_date: null
     , company_id: req.body.company_id
     , currency_id	: req.body.currency_id
-    , sales_man	: req.body.sales_man
     , tran_no: req.body.tran_no
     , tran_date: req.body.tran_date
     , created_by: req.body.created_by
@@ -148,28 +147,28 @@ app.post('/insertSalesOrder', (req, res, next) => {
 });
 
 
- app.post('/getQuoteLineItemsById', (req, res, next) => {
-    db.query(`SELECT
-              qt.* 
+//  app.post('/getQuoteLineItemsById', (req, res, next) => {
+//     db.query(`SELECT
+//               qt.* 
              
-              FROM sales_order_item qt 
-              WHERE qt.sales_order_id =  ${db.escape(req.body.sales_order_id)}`,
-            (err, result) => {
+//               FROM sales_order_item qt 
+//               WHERE qt.sales_order_id =  ${db.escape(req.body.sales_order_id)}`,
+//             (err, result) => {
          
-        if (err) {
-          return res.status(400).send({
-            msg: 'No result found'
-          });
-        } else {
-              return res.status(200).send({
-                data: result,
-                msg:'Success'
-              });
-        }
+//         if (err) {
+//           return res.status(400).send({
+//             msg: 'No result found'
+//           });
+//         } else {
+//               return res.status(200).send({
+//                 data: result,
+//                 msg:'Success'
+//               });
+//         }
    
-      }
-    );
-  });
+//       }
+//     );
+//   });
   
   app.get('/getUnitFromValueList', (req, res, next) => {
   db.query(
@@ -446,8 +445,14 @@ app.post("/generateDeliveryFromSalesOrder", async (req, res, next) => {
     app.post('/getQuoteLineItemsById', (req, res, next) => {
     db.query(`SELECT
               qt.* 
-           
+              ,c.title AS product_name
+              ,c.product_code
+              ,c.unit
+              ,c.pcs_per_carton
+              ,c.purchase_unit_cost
+              ,c.wholesale_price
               FROM sales_order_item qt 
+            LEFT JOIN product c ON (c.product_id = qt.product_id)
               WHERE qt.sales_order_id =  ${db.escape(req.body.sales_order_id)}`,
             (err, result) => {
          
@@ -466,21 +471,18 @@ app.post("/generateDeliveryFromSalesOrder", async (req, res, next) => {
     );
   });
   
-  
-   app.post('/insertQuoteItems', (req, res, next) => {
+  app.post('/insertQuoteItems', (req, res, next) => {
     let data = {
-      description: req.body.description,
-      amount: req.body.amount,
-    
-      title: req.body.title,
+      product_id: req.body.product_id,
       sales_order_id: req.body.sales_order_id,
-   
       quantity: req.body.quantity,
-    
-      unit: req.body.unit,
-      remarks: req.body.remarks,
-    
-      unit_price: req.body.unit_price,
+      loose_qty: req.body.loose_qty,
+      carton_qty: req.body.carton_qty,
+      carton_price: req.body.carton_price,
+      discount_value: req.body.discount_value,
+      wholesale_price: req.body.wholesale_price,
+      gross_total: req.body.gross_total,
+      total: req.body.total,
   
     };
   
