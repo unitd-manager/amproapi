@@ -399,6 +399,65 @@ app.get("/getReturnsDescriptionPage", (req, res, next) => {
   );
 });
 
+app.get("/getPrivacyPolicyDescriptionPage", (req, res, next) => {
+  db.query(
+    `SELECT 
+       title,description,content_id
+       FROM content WHERE content_type="Privacy Policy Page"`,
+    (err, result) => {
+      if (err) {
+        return res.status(400).send({
+          data: err
+        });
+      } else {
+        return res.status(200).send({
+          data: result,
+          msg: "Success",
+        });
+      }
+    }
+  );
+});
+
+app.get("/getDisclaimerDescriptionPage", (req, res, next) => {
+  db.query(
+    `SELECT 
+       title,description,content_id
+       FROM content WHERE content_type="Disclaimer Page"`,
+    (err, result) => {
+      if (err) {
+        return res.status(400).send({
+          data: err
+        });
+      } else {
+        return res.status(200).send({
+          data: result,
+          msg: "Success",
+        });
+      }
+    }
+  );
+});
+
+app.get("/getRefundPolicyDescriptionPage", (req, res, next) => {
+  db.query(
+    `SELECT 
+       title,description,content_id
+       FROM content WHERE content_type="Refund Policy Page"`,
+    (err, result) => {
+      if (err) {
+        return res.status(400).send({
+          data: err
+        });
+      } else {
+        return res.status(200).send({
+          data: result,
+          msg: "Success",
+        });
+      }
+    }
+  );
+});
 
 
 

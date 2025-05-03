@@ -48,8 +48,33 @@ app.get('/getSalesOrder', (req, res, next) => {
 
 app.post('/getSalesorderById', (req, res, next) => {
   db.query(` Select 
-  s.*
+  s.*,
+    c.company_name,
+    c.customer_code,
+    c.address_street,
+    c.address_town,
+    c.address_state,
+    c.address_country,
+    c.address_po_code,
+    c.phone_no,
+       cd.billing_address_street,
+    cd.billing_address_town,
+    cd.billing_address_state,
+    cd.billing_address_country,
+    cd.billing_address_po_code,
+    
+    c.notes,
+    cu.currency_id,
+    cu.currency_code,
+    cu.currency_name,
+    cu.currency_rate,
+    co.first_name AS contact_person 
   From sales_order s
+   LEFT JOIN company c ON (c.company_id = s.company_id)
+      LEFT JOIN company cd ON (cd.company_id = s.delivery_id)
+
+       LEFT JOIN contact co ON (co.company_id = c.company_id)
+  LEFT JOIN currency cu ON (cu.currency_id = s.currency_id)
   Where s.sales_order_id=${db.escape(req.body.sales_order_id)}`,
   (err, result) => {
     if (err) {

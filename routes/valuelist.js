@@ -119,7 +119,13 @@ app.get('/getValueListDropdown', (req, res, next) => {
       { id: '65', name: 'Sub Category Type'},
       { id: '66', name: 'Product Color'},
       { id: '67', name: 'Product Size'},
-       { id: '68', name: 'UoM'}
+      { id: '68', name: 'UoM'},
+      { id: '69', name: 'Tax'},
+      { id: '70', name: 'Price Group'},
+      { id: '71', name: 'Contact Type'},
+      { id: '72', name: 'Area'},
+      { id: '73', name: 'Currency'},
+      { id: '74', name: 'Supplier Terms'},
     ],
     msg: 'Success',
   })
