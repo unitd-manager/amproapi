@@ -94,6 +94,51 @@ app.post('/get-SupplierById', (req, res, next) => {
 });
 
 
+app.put('/updateSupplierPaymentsAndPurchaseOrder', (req, res) => {
+  // const supplier_receipt_id = req.body.supplier_receipt_id;
+  const supplier_receipt_history_id = req.body.supplier_receipt_history_id;
+  const purchase_order_id = req.body.purchase_order_id;
+
+  const updateSubConPaymentsQuery = `
+    UPDATE supplier_receipt_history
+    SET invoice_paid_status = 'Cancelled'
+    WHERE supplier_receipt_history_id = ?
+  `;
+
+  const updateSubConWorkOrderQuery = `
+    UPDATE purchase_order
+    SET payment_status = 
+      CASE
+        WHEN EXISTS (
+          SELECT * FROM supplier_receipt_history
+          WHERE purchase_order_id = ? AND invoice_paid_status != 'Cancelled'
+        ) THEN 'Partially Paid'
+        ELSE 'Due'
+      END
+    WHERE purchase_order_id = ?
+  `;
+
+  // Execute the first update query
+  db.query(updateSubConPaymentsQuery, [supplier_receipt_history_id], (err, result1) => {
+    if (err) {
+      console.error('Error updating supplier_receipt:', err);
+      return res.status(400).json({ error: 'An error occurred while updating supplier_receipt' });
+    }
+
+    // Execute the second update query
+    db.query(updateSubConWorkOrderQuery, [purchase_order_id, purchase_order_id], (err, result2) => {
+      if (err) {
+        console.error('Error updating purchase_order:', err);
+        return res.status(400).json({ error: 'An error occurred while updating purchase_order' });
+      }
+
+      // Both updates were successful
+      return res.status(200).json({ message: 'Updates completed successfully' });
+    });
+  });
+});
+
+
 app.post('/edit-Supplier', (req, res, next) => {
   db.query(`UPDATE supplier 
             SET company_name=${db.escape(req.body.company_name)}

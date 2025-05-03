@@ -101,7 +101,7 @@ sgMail.setApiKey("SG.koXvByUCTWGMh33s8yU4kg.CtVB51MVd18JsHNydEnBn_dQLvP11YxBH0OO
 
 app.post('/sendgmail', (req, res, next) => {
     
-sgMail.setApiKey("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")
+sgMail.setApiKey("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")
 
   let data = {
   to: req.body.to,
@@ -436,6 +436,9 @@ app.post("/getCodeValue", (req, res, next) => {
   }else if(type == 'invoice'){
       key_text = 'nextInvoiceCode';
     sql = "SELECT * FROM setting WHERE key_text='invoiceCodePrefixes' OR key_text='nextInvoiceCode'";  
+  }else if(type == 'delivery'){
+      key_text = 'nextDeliveryCode';
+    sql = "SELECT * FROM setting WHERE key_text='deliveryCodePrefix' OR key_text='nextDeliveryCode'";  
   }else if(type == 'subConworkOrder'){
       key_text = 'nextSubconCode';
     sql = "SELECT * FROM setting WHERE key_text='subconCodePrefix' OR key_text='nextSubconCode'";  
@@ -531,7 +534,15 @@ else if(type == 'lead'){
   }else if(type == 'invoice'){
       key_text = 'nextInvoiceCode';
     sql = "SELECT * FROM setting WHERE key_text='invoiceCodePrefix' OR key_text='nextInvoiceCode'";  
-  }else if(type == 'subConworkOrder'){
+  }else if(type == 'delivery'){
+      key_text = 'nextDeliveryCode';
+    sql = "SELECT * FROM setting WHERE key_text='deliveryCodePrefix' OR key_text='nextDeliveryCode'";  
+  }
+  else if(type == 'salesorder'){
+      key_text = 'nextSalesOrderCode';
+    sql = "SELECT * FROM setting WHERE key_text='salesorderCodePrefix' OR key_text='nextSalesOrderCode'";  
+  }
+  else if(type == 'subConworkOrder'){
       key_text = 'nextSubconCode';
     sql = "SELECT * FROM setting WHERE key_text='subconCodePrefix' OR key_text='nextSubconCode'";  
   }

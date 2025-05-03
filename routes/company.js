@@ -17,8 +17,29 @@ app.use(fileUpload({
     createParentPath: true
 }));
 
-app.get('/getCompany', (req, res, next) => {
-  db.query("SELECT company_id, company_name FROM company",
+app.get('/getCompany', (req, res) => {
+  db.query(
+    `SELECT 
+      c.*, 
+      co.first_name AS contact_person 
+    FROM company c
+    LEFT JOIN contact co ON co.company_id = c.company_id`, 
+    (err, results) => {
+      if (err) {
+        console.error("Error: ", err);
+        return res.status(500).send({ msg: 'Database query error', error: err });
+      }
+      if (!results.length) {
+        return res.status(404).send({ msg: 'No companies found' });
+      }
+      return res.status(200).send({ data: results, msg: 'Success' });
+    }
+  );
+});
+
+
+app.get('/getContact', (req, res, next) => {
+  db.query(`SELECT contact_id, first_name FROM contact`,
     (err, result) => {
       if (err) {
         console.log("error: ", err);
