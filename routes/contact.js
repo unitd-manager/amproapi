@@ -665,6 +665,7 @@ app.post('/editContact', (req, res, next) => {
             ,activated=${db.escape(req.body.activated)}
             ,address_city=${db.escape(req.body.address_city)}
             ,department=${db.escape(req.body.department)}
+             ,hand_phone_no=${db.escape(req.body.hand_phone_no)}
             WHERE contact_id=${db.escape(req.body.contact_id)}`,
     (err, result) => {
      
@@ -805,7 +806,9 @@ app.post('/insertContact', (req, res, next) => {
    , activated	: req.body.activated
    , address_city: req.body.address_city
    ,created_by: req.body.created_by
-   , department: req.body.department};
+   ,supplier_id: req.body.supplier_id
+   ,hand_phone_no : req.body.hand_phone_no
+   ,department: req.body.department};
   let sql = "INSERT INTO contact SET ?";
   let query = db.query(sql, data,(err, result) => {
     if (err) {

@@ -71,6 +71,9 @@ app.post('/get-SupplierById', (req, res, next) => {
   ,s.payment_details
   ,s.terms
   ,s.phone
+  ,s.supplier_code
+  ,s.user_name
+  ,s.password
   ,gc.name AS country_name 
   ,p.payment_status
   FROM supplier s LEFT JOIN (geo_country gc) ON (s.address_country = gc.country_code)
@@ -167,6 +170,8 @@ app.post('/edit-Supplier', (req, res, next) => {
             ,is_active=${db.escape(req.body.is_active)}
             ,website=${db.escape(req.body.website)}
             ,hand_phone_no=${db.escape(req.body.hand_phone_no)}
+            ,user_name=${db.escape(req.body.user_name)}
+            ,password=${db.escape(req.body.password)}
             WHERE supplier_id =${db.escape(req.body.supplier_id)}`,
             (err, result) => {
               if (err) {
@@ -829,6 +834,27 @@ app.get('/getTaxDrodownFromValuelist', (req, res, next) => {
     },
   )
 })
+
+app.post('/getContactBySupplierId', (req, res, next) => {
+  db.query(`SELECT * FROM contact
+  WHERE supplier_id=${db.escape(req.body.supplier_id)}`,
+  (err, result) => {
+    if (err) {
+      console.log('error: ', err)
+      return res.status(400).send({
+        data: err,
+        msg: 'failed',
+      })
+    } else {
+      return res.status(200).send({
+        data: result,
+        msg: 'Success',
+})
+}
+  }
+);
+});
+
 
 app.get('/secret-route', userMiddleware.isLoggedIn, (req, res, next) => {
   console.log(req.userData);

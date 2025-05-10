@@ -472,6 +472,11 @@ app.post("/getCodeValue", (req, res, next) => {
       key_text = 'nextWOCode';
       sql = "SELECT * FROM setting WHERE key_text='wOCodePrefix' OR key_text='nextWOCode'";  
   }
+  else if(type == 'SupplierCode'){
+    withprefix = false;
+    key_text = 'nextSupplierCode';
+    sql = "SELECT * FROM setting WHERE key_text='SupplierCodePrefix' OR key_text='nextSupplierCode'";  
+}
   let query = db.query(sql, (err, result) => {
       let old = result
     if (err) {

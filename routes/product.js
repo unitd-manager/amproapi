@@ -1649,6 +1649,7 @@ app.post("/getProduct", (req, res, next) => {
   ,p.ecommerce
   ,p.show_on_pos
   ,p.tax_percentage
+  ,p.model_no
   ,b.brand_name
   ,s.sub_category_title
   ,d.department_name
@@ -1831,6 +1832,7 @@ app.post("/edit-Product", (req, res, next) => {
            ,show_on_sales=${db.escape(req.body.show_on_sales)}
             ,is_active=${db.escape(req.body.is_active)}
             ,eprocurement=${db.escape(req.body.eprocurement)}
+            ,ecommerce=${db.escape(req.body.ecommerce)}
            ,show_on_pos=${db.escape(req.body.show_on_pos)}
             ,tax_percentage=${db.escape(req.body.tax_percentage)}
             ,carton_price=${db.escape(req.body.carton_price)}
@@ -2051,7 +2053,14 @@ app.post('/insertProduct', (req, res, next) => {
     , discount_from_date: req.body.discount_from_date
     , tag : req.body. tag 
     , discount_to_date: req.body.discount_to_date
-    , mrp: req.body.mrp};
+    , mrp: req.body.mrp
+    , show_on_purchase: 0
+    , show_on_sales : 0
+    , is_active: 0
+    , eprocurement : 0 
+    , ecommerce: 0
+    , show_on_pos: 0
+  };
   let sql = "INSERT INTO product SET ?";
   let query = db.query(sql, data, (err, result) => {
     if (err) {
