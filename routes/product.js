@@ -1655,10 +1655,12 @@ app.get("/getProductAdmin", (req, res, next) => {
   db.query(
     `SELECT DISTINCT p.product_id
   ,p.category_id
+  ,p.alternative_product_name 
+  ,p.purchase_unit_cost 	
   ,p.sub_category_id
   ,p.title
-  ,p.description,
-  p.qty_in_stock
+  ,p.description
+  ,p.qty_in_stock
   ,p.price
   ,p.published
   ,p.creation_date
@@ -1687,11 +1689,26 @@ app.get("/getProductAdmin", (req, res, next) => {
   ,p.discount_from_date
   ,p.discount_to_date
   ,p.tag
+  ,p.ecommerce_price
+  ,p.retail_price
+  ,p.wholesale_price
+  ,p.department_id
+  ,p.unit
+  ,p.part_number 
+  ,p.carton_price
+  ,p.carton_qty
+  ,p.loose_qty
+  ,p.department_id
+  ,p.supplier_id
+  ,d.department_name
+  ,s.company_name
   ,i.inventory_id
    ,GROUP_CONCAT(m.file_name) AS images
     from product p
      LEFT JOIN media m ON (p.product_id = m.record_id) 
      LEFT JOIN inventory i ON p.product_id = i.product_id
+     LEFT JOIN department d ON d.department_id = p.department_id
+     LEFT JOIN supplier s  ON s.supplier_id = p.supplier_id
     where p.product_id != ''
      GROUP BY p.product_id `,
     (err, result) => {
@@ -1877,11 +1894,51 @@ app.post("/getProduct", (req, res, next) => {
     ,p.sales_part_number
     ,p.igst
     ,p.tag
+    ,p.ecommerce_price
+    ,p.retail_price
+  ,p.wholesale_price
+  ,p.department_id
+  ,p.unit
+  ,p.part_number 
+  ,p.carton_price
+  ,p.carton_qty
+  ,p.department_id
+  ,p.sub_category_id
+  ,p.brand_id
+  ,p.display_order
+  ,p.purchase_uom
+  ,p.sales_uom
+  ,p.pcs_per_carton
+  ,p.product_weight 
+  ,p.purchase_unit_cost
+  ,p.operation_cost
+  ,p.min_retail_price
+  ,p.min_wholesale_price
+  ,p.min_carton_price
+  ,p.style_fabric
+  ,p.carton_weight
+  ,p.m3_per_carton
+  ,p.bin
+  ,p.remarks
+  ,p.show_on_purchase
+  ,p.show_on_sales
+  ,p.is_active
+  ,p.eprocurement
+  ,p.ecommerce
+  ,p.show_on_pos
+  ,p.tax_percentage
+  ,p.model_no
+  ,b.brand_name
+  ,s.sub_category_title
+  ,d.department_name
     ,p.created_by
     ,p.modified_by
      ,GROUP_CONCAT(m.file_name) AS images
     from product p
      LEFT JOIN media m ON (p.product_id = m.record_id)
+     LEFT JOIN department d ON (d.department_id = p.department_id)
+     LEFT JOIN brand b ON (b.brand_id = p.brand_id)
+     LEFT JOIN sub_category s ON (s.sub_category_id = p.sub_category_id)
     where p.product_id = ${db.escape(req.body.product_id)}
      GROUP BY p.product_id`,
     (err, result) => {
@@ -1900,6 +1957,7 @@ app.post("/getProduct", (req, res, next) => {
     }
   );
 })
+
 
 app.post("/getPoProduct", (req, res, next) => {
   db.query(
@@ -2031,7 +2089,7 @@ app.post("/edit-Product", (req, res, next) => {
             ,qty_in_stock=${db.escape(req.body.qty_in_stock)}
            ,unit=${db.escape(req.body.unit)}
             ,alternative_product_name=${db.escape(req.body.alternative_product_name)}
-            ,brand=${db.escape(req.body.brand)}
+            ,brand_id=${db.escape(req.body.brand_id)}
            ,keyword_search=${db.escape(req.body.keyword_search)}
             ,gst=${db.escape(req.body.gst)}
             ,description_short=${db.escape(req.body.description_short)}
@@ -2040,6 +2098,38 @@ app.post("/edit-Product", (req, res, next) => {
             ,modification_date=${db.escape(req.body.modification_date)}
             ,modified_by=${db.escape(req.body.modified_by)}
             ,tag=${db.escape(req.body.tag)}
+            ,operation_cost=${db.escape(req.body.operation_cost)}
+            ,min_retail_price=${db.escape(req.body.min_retail_price)}
+             ,min_wholesale_price=${db.escape(req.body.min_wholesale_price)}
+              ,min_carton_price=${db.escape(req.body.min_carton_price)}
+              ,style_fabric=${db.escape(req.body.style_fabric)}
+              ,carton_weight=${db.escape(req.body.carton_weight)}
+            ,m3_per_carton=${db.escape(req.body.m3_per_carton)}
+            ,bin=${db.escape(req.body.bin)}
+            ,remarks=${db.escape(req.body.remarks)}
+            ,show_on_purchase=${db.escape(req.body.show_on_purchase)}
+           ,show_on_sales=${db.escape(req.body.show_on_sales)}
+            ,is_active=${db.escape(req.body.is_active)}
+            ,eprocurement=${db.escape(req.body.eprocurement)}
+            ,ecommerce=${db.escape(req.body.ecommerce)}
+           ,show_on_pos=${db.escape(req.body.show_on_pos)}
+            ,tax_percentage=${db.escape(req.body.tax_percentage)}
+            ,carton_price=${db.escape(req.body.carton_price)}
+            ,model_no=${db.escape(req.body.model_no)}
+            ,modification_date=${db.escape(req.body.modification_date)}
+            ,modified_by=${db.escape(req.body.modified_by)}
+            ,purchase_uom=${db.escape(req.body.purchase_uom)}
+            ,sales_uom=${db.escape(req.body.sales_uom)}
+            ,pcs_per_carton=${db.escape(req.body.pcs_per_carton)}
+            ,purchase_unit_cost=${db.escape(req.body.purchase_unit_cost)}
+            ,retail_price=${db.escape(req.body.retail_price)}
+            ,wholesale_price=${db.escape(req.body.wholesale_price)}
+            ,sub_category_id=${db.escape(req.body.sub_category_id)}
+            ,department_id=${db.escape(req.body.department_id)}
+            ,supplier_id=${db.escape(req.body.supplier_id)}
+            ,display_order=${db.escape(req.body.display_order)}
+            ,pcs_per_carton=${db.escape(req.body.pcs_per_carton)}
+            ,product_weight=${db.escape(req.body.product_weight)}
             WHERE product_id =  ${db.escape(req.body.product_id)}`,
     (err, result) => {
       if (err) {
@@ -2242,7 +2332,14 @@ app.post('/insertProduct', (req, res, next) => {
     , discount_from_date: req.body.discount_from_date
     , tag : req.body. tag 
     , discount_to_date: req.body.discount_to_date
-    , mrp: req.body.mrp};
+    , mrp: req.body.mrp
+    , show_on_purchase: 0
+    , show_on_sales : 0
+    , is_active: 0
+    , eprocurement : 0 
+    , ecommerce: 0
+    , show_on_pos: 0
+  };
   let sql = "INSERT INTO product SET ?";
   let query = db.query(sql, data, (err, result) => {
     if (err) {
@@ -2259,6 +2356,7 @@ app.post('/insertProduct', (req, res, next) => {
     }
   });
 });
+
 
 app.post("/deleteProduct", (req, res, next) => {
   let data = { product_id: req.body.product_id };
@@ -2420,6 +2518,99 @@ app.get("/getMaxItemCode", (req, res, next) => {
     }
   );
 });
+
+app.get("/getSubCategory", (req, res, next) => {
+  db.query(
+    `SELECT sub_category_id
+  ,sub_category_title
+  FROM sub_category 
+  WHERE sub_category_id !='' `,
+    (err, result) => {
+      if (err) {
+        console.log("error: ", err);
+        return res.status(400).send({
+          data: err,
+          msg: "failed",
+        });
+      } else {
+        return res.status(200).send({
+          data: result,
+          msg: "Success",
+        });
+      }
+    }
+  );
+});
+
+app.get("/getBrand", (req, res, next) => {
+  db.query(
+    `SELECT brand_id
+  ,brand_name
+  FROM brand 
+  WHERE brand_id !='' `,
+    (err, result) => {
+      if (err) {
+        console.log("error: ", err);
+        return res.status(400).send({
+          data: err,
+          msg: "failed",
+        });
+      } else {
+        return res.status(200).send({
+          data: result,
+          msg: "Success",
+        });
+      }
+    }
+  );
+});
+
+app.get("/getDepartment", (req, res, next) => {
+  db.query(
+    `SELECT department_id
+  ,department_name
+  FROM department 
+  WHERE department_id !='' `,
+    (err, result) => {
+      if (err) {
+        console.log("error: ", err);
+        return res.status(400).send({
+          data: err,
+          msg: "failed",
+        });
+      } else {
+        return res.status(200).send({
+          data: result,
+          msg: "Success",
+        });
+      }
+    }
+  );
+});
+
+app.get("/getSupplier", (req, res, next) => {
+  db.query(
+    `SELECT supplier_id
+  ,company_name
+  FROM supplier 
+  WHERE supplier_id !='' `,
+    (err, result) => {
+      if (err) {
+        console.log("error: ", err);
+        return res.status(400).send({
+          data: err,
+          msg: "failed",
+        });
+      } else {
+        return res.status(200).send({
+          data: result,
+          msg: "Success",
+        });
+      }
+    }
+  );
+});
+
 
 app.get("/secret-route", userMiddleware.isLoggedIn, (req, res, next) => {
   console.log(req.userData);

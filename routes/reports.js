@@ -1752,7 +1752,7 @@ LEFT JOIN
 LEFT JOIN
     company c ON c.company_id = i.company_id
 WHERE 
-    i.invoice_id !='' AND  c.company_id =${db.escape(req.body.company_id)}
+    i.invoice_id !=''
 GROUP BY
     i.invoice_date,
     i.invoice_code`,
