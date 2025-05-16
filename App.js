@@ -6,8 +6,8 @@ var https = require('https');
 const fileUpload = require('express-fileupload');
 var flash = require('connect-flash')
 const session = require('express-session');
-
-global.__basedir = __dirname;
+  
+global.__basedir = __dirname;  
 
 var privateKey  = fs.readFileSync('sslcrt/server.key', 'utf8');
 var certificate = fs.readFileSync('sslcrt/server.crt', 'utf8');
@@ -15,8 +15,8 @@ var credentials = {key: privateKey, cert: certificate};
 
 var httpServer = http.createServer(app);
 var httpsServer = https.createServer(credentials, app);
-let port = 2003;
-let secureport = 2004;
+let port = 2001;
+let secureport = 2002;
 httpServer.listen(port, () => {
     console.log(`Server Running in port:${port}`);
   });
@@ -117,7 +117,7 @@ app.use('/training', training);
 app.use('/employee', employee);
 app.use('/leave', leave);
 app.use('/loan', loan);
-app.use('/bank', bank);
+app.use('/bank', bank); 
 app.use('/salesOrder', salesOrder);
 app.use('/salesItem', salesItem);
 app.use('/currency', currency);

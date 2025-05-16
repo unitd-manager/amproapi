@@ -49,6 +49,47 @@ app.get('/getValueList', (req, res, next) => {
   )
 })
 
+
+app.post('/getValueListByKeyText', (req, res, next) => {
+  const { value } = req.body;
+
+  if (!value) {
+    return res.status(400).send({
+      msg: 'value is required',
+    });
+  }
+
+  const sql = `
+    SELECT v.key_text,
+           v.valuelist_id,
+           v.value,
+           v.sort_order,
+           v.code,
+           v.creation_date,
+           v.modification_date,
+           v.published
+    FROM valuelist v
+    WHERE v.value = ?
+    ORDER BY v.sort_order ASC
+  `;
+
+  db.query(sql, [value], (err, result) => {
+    if (err) {
+      console.log('error:', err);
+      return res.status(400).send({
+        data: err,
+        msg: 'failed',
+      });
+    } else {
+      return res.status(200).send({
+        data: result,
+        msg: 'Success',
+      });
+    }
+  });
+});
+
+
 app.get('/getValueListDropdown', (req, res, next) => {
   return res.status(200).send({
     data: [
@@ -119,13 +160,8 @@ app.get('/getValueListDropdown', (req, res, next) => {
       { id: '65', name: 'Sub Category Type'},
       { id: '66', name: 'Product Color'},
       { id: '67', name: 'Product Size'},
-      { id: '68', name: 'UoM'},
-      { id: '69', name: 'Tax'},
-      { id: '70', name: 'Price Group'},
-      { id: '71', name: 'Contact Type'},
-      { id: '72', name: 'Area'},
-      { id: '73', name: 'Currency'},
-      { id: '74', name: 'Supplier Terms'},
+       { id: '68', name: 'UoM'},
+          { id: '69', name: 'Tax Type'}
     ],
     msg: 'Success',
   })

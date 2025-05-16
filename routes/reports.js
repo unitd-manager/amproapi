@@ -110,7 +110,11 @@ ORDER BY e.first_name ASC`,
 
 app.post('/getPayslipGeneratedReport', (req, res, next) => {
   db.query(` SELECT pm.payroll_management_id
-  ,(pm.allowance1+pm.allowance2+pm.allowance3+pm.allowance4+pm.allowance5+pm.allowance6) AS total_allowance
+                ,(
+        SELECT SUM(pmi.allowance1 + pmi.allowance2 + pmi.allowance3 + pmi.allowance4 + pmi.allowance5)
+        FROM payroll_management pmi
+        WHERE pmi.employee_id = e.employee_id
+      ) AS total_allowance
   ,pm.total_deductions
   ,pm.reimbursement
   ,pm.cpf_employee
@@ -1457,49 +1461,49 @@ app.get('/getPurchaseGstReport', (req, res, next) => {
   });
 
  
-app.post("/getSalesReport", (req, res, next) => {
-  db.query(
-    `SELECT
-    i.invoice_date,
-    i.invoice_code,
-    c.company_name,
-    SUM(it.total_cost) AS invoiceAmount,
-    SUM(i.invoice_amount - it.total_cost) AS gst,
-    SUM(i.invoice_amount) AS total,
-    SUM(ir.amount) AS received,
-    SUM(i.invoice_amount - ir.amount) AS balance
-FROM
-    invoice i
-LEFT JOIN
-    invoice_receipt_history ir ON ir.invoice_id = i.invoice_id
-LEFT JOIN
-    project p ON p.project_id = i.project_id
-LEFT JOIN
-    invoice_item it ON it.invoice_id = i.invoice_id
-LEFT JOIN
-    company c ON c.company_id = p.company_id
-WHERE 
-    i.invoice_id !=''
-GROUP BY
-    i.invoice_date,
-    i.invoice_code,
-    c.company_name`,
-    (err, result) => {
-      if (err) {
-        console.log("error: ", err);
-        return res.status(400).send({
-          data: err,
-          msg: "failed",
-        });
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: "Success",
-        });
-      }
-    }
-  );
-});
+// app.post("/getSalesReport", (req, res, next) => {
+//   db.query(
+//     `SELECT
+//     i.invoice_date,
+//     i.invoice_code,
+//     c.company_name,
+//     SUM(it.total_cost) AS invoiceAmount,
+//     SUM(i.invoice_amount - it.total_cost) AS gst,
+//     SUM(i.invoice_amount) AS total,
+//     SUM(ir.amount) AS received,
+//     SUM(i.invoice_amount - ir.amount) AS balance
+// FROM
+//     invoice i
+// LEFT JOIN
+//     invoice_receipt_history ir ON ir.invoice_id = i.invoice_id
+// LEFT JOIN
+//     project p ON p.project_id = i.project_id
+// LEFT JOIN
+//     invoice_item it ON it.invoice_id = i.invoice_id
+// LEFT JOIN
+//     company c ON c.company_id = p.company_id
+// WHERE 
+//     i.invoice_id !=''
+// GROUP BY
+//     i.invoice_date,
+//     i.invoice_code,
+//     c.company_name`,
+//     (err, result) => {
+//       if (err) {
+//         console.log("error: ", err);
+//         return res.status(400).send({
+//           data: err,
+//           msg: "failed",
+//         });
+//       } else {
+//         return res.status(200).send({
+//           data: result,
+//           msg: "Success",
+//         });
+//       }
+//     }
+//   );
+// });
 
 
 app.get('/getInvoiveByMonth', (req, res, next) => {
@@ -1633,7 +1637,7 @@ AND i.status='due' OR i.status='Partial Payment'  OR i.status='paid'`,
 app.get('/getIr8aReport', (req, res, next) => {
   db.query(`
 SELECT DISTINCT 
-              CONCAT_WS(' ', e.first_name, e.last_name) AS employee_name
+             e.employee_name
               ,e.citizen
                ,CONCAT_WS(' ', e.nric_no, e.fin_no) AS nric_fin
               ,e.work_permit
@@ -1648,7 +1652,7 @@ SELECT DISTINCT
               ,(SELECT SUM(pm.cpf_employee) FROM payroll_management pm WHERE pm.employee_id = e.employee_id) AS total_cpf_employee
               
         FROM employee e
- ORDER BY e.first_name ASC`,
+ ORDER BY e.employee_name ASC`,
   (err, result) => {
     if (err) {
       console.log('error: ', err)
@@ -1703,6 +1707,72 @@ SELECT DISTINCT *
 }
 );
 });
+
+app.get('/getCompany', (req, res, next) => {
+  db.query("SELECT company_id, company_name FROM company",
+    (err, result) => {
+      if (err) {
+        console.log("error: ", err);
+        result(err, null);
+        return;
+      }
+      if (result.length == 0) {
+        return res.status(400).send({
+          msg: 'No result found'
+        });
+      } else {
+            return res.status(200).send({
+              data: result,
+              msg:'Success'
+            });
+
+        }
+ 
+    }
+  );
+});
+
+app.post("/getSalesReport", (req, res, next) => {
+  db.query(
+    `SELECT
+    i.invoice_date,
+    i.invoice_code,
+    c.company_name,
+    SUM(it.total_cost) AS invoiceAmount,
+    SUM(i.invoice_amount - it.total_cost) AS gst,
+    SUM(i.invoice_amount) AS total,
+    SUM(ir.amount) AS received,
+    SUM(i.invoice_amount - ir.amount) AS balance
+FROM
+    invoice i
+LEFT JOIN
+    invoice_receipt_history ir ON ir.invoice_id = i.invoice_id
+LEFT JOIN
+    invoice_item it ON it.invoice_id = i.invoice_id
+LEFT JOIN
+    company c ON c.company_id = i.company_id
+WHERE 
+    i.invoice_id !='' AND  c.company_id =${db.escape(req.body.company_id)}
+GROUP BY
+    i.invoice_date,
+    i.invoice_code`,
+    (err, result) => {
+      if (err) {
+        console.log("error: ", err);
+        return res.status(400).send({
+          data: err,
+          msg: "failed",
+        });
+      } else {
+        return res.status(200).send({
+          data: result,
+          msg: "Success",
+        });
+      }
+    }
+  );
+});
+
 
 
 app.get('/secret-route', userMiddleware.isLoggedIn, (req, res, next) => {

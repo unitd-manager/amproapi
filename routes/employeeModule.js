@@ -17,11 +17,95 @@ app.use(fileUpload({
     createParentPath: true
 }));
 
+app.post('/import/excel', (req, res) => {
+    const { data } = req.body;
+    const parsed_data = JSON.parse(data);
+console.log('parsed_data',parsed_data);
+    const limit = parsed_data.length;
+    const count = [];
+    const connection = db;
+    
+    connection.beginTransaction((err) => {
+        if (err) {
+            connection.rollback(() => { console.log(err); });
+        } else {
+            insertRows(connection);
+        }
+    });
+
+    function insertRows(connection) {
+        connection.query(
+            "INSERT INTO employee (`employee_name`, `salutation`, `gender`, `date_of_birth`, `nationality`, `race`, `position`, `mobile`, `email`, `status`) VALUES (?,?,?,?,?,?,?,?,?,?);",
+            [
+                parsed_data[count.length].Name,
+                parsed_data[count.length].Salutation,
+                parsed_data[count.length].Gender,
+                parsed_data[count.length].Dob,
+                parsed_data[count.length].Nationality,
+                parsed_data[count.length].Race,
+                parsed_data[count.length].Occupation,
+                parsed_data[count.length].HandphoneNo,
+                parsed_data[count.length].EmailID,
+                'Current'
+            ],
+            (err, rslt) => {
+                if (err) {
+                    connection.rollback(() => { console.log(err); });
+                    res.send(err);
+                    res.end();
+                } else {
+                    connection.query(
+                        "INSERT INTO job_information (`employee_id`, `work_hour_details`, `working_days`,`basic_pay`,`act_join_date`) VALUES (?,?,?,?,?);",
+                        [
+                            rslt.insertId,
+                            parsed_data[count.length].Detailsofworkinghours,
+                            parsed_data[count.length].Noofworkingdays,
+                            parsed_data[count.length].BasicPay,
+                             parsed_data[count.length].EmploymentStartDate,
+                        ],
+                        (err) => {
+                            if (err) {
+                                connection.rollback(() => { console.log(err); });
+                                res.send(err);
+                                res.end();
+                            } else {
+                                next(connection, parsed_data[count.length].Name);
+                            }
+                        }
+                    );
+                }
+            }
+        );
+    }
+
+    function next(connection, name) {
+        if ((count.length + 1) === limit) {
+            connection.commit((err) => {
+                if (err) {
+                    connection.rollback(() => { console.log(err); });
+                    res.send('err');
+                    res.end();
+                } else {
+                    console.log("RECORDS INSERTED!!!");
+                    res.send('SUCCESS');
+                    res.end();
+                }
+            });
+        } else {
+            console.log(`${name} inserted`);
+            count.push(1);
+            insertRows(connection);
+        }
+    }
+});
+
+
 app.get('/getEmployee', (req, res, next) => {
   db.query(`SELECT DISTINCT a.employee_id AS employee_id_duplicate
   ,a.emp_code
+  ,a.employee_id
   ,a.first_name
-   ,a.employee_name
+  ,a.employee_name
   ,a.salutation
   ,a.gender
   ,a.status
@@ -31,6 +115,7 @@ app.get('/getEmployee', (req, res, next) => {
   ,a.marital_status
   ,a.nationality
   ,a.race
+  ,a.pay
   ,a.notes
   ,a.religion
   ,a.project_designation
@@ -45,7 +130,7 @@ LEFT JOIN geo_country gc ON (a.address_country = gc.country_code)
 LEFT JOIN job_information j ON (a.employee_id = j.employee_id)
 LEFT JOIN staff s ON (a.employee_id = s.employee_id)
 WHERE a.employee_id != ''
-ORDER BY a.first_name ASC`,
+ORDER BY a.employee_name ASC`,
     (err, result) => {
       if (err) {
         console.log('error: ', err)
@@ -66,8 +151,7 @@ ORDER BY a.first_name ASC`,
 app.get('/getArchiveEmployee', (req, res, next) => {
   db.query(`SELECT DISTINCT a.employee_id AS employee_id_duplicate
   ,a.emp_code
-  ,a.first_name
-   ,a.employee_name
+  ,a.employee_name
   ,a.salutation
   ,a.gender
   ,a.status
@@ -77,6 +161,7 @@ app.get('/getArchiveEmployee', (req, res, next) => {
   ,a.marital_status
   ,a.nationality
   ,a.race
+  ,a.pay
   ,a.notes
   ,a.religion
   ,a.project_designation
@@ -91,7 +176,7 @@ LEFT JOIN geo_country gc ON (a.address_country = gc.country_code)
 LEFT JOIN job_information j ON (a.employee_id = j.employee_id)
 LEFT JOIN staff s ON (a.employee_id = s.employee_id)
 WHERE a.employee_id != '' AND a.status ='Archive'
-ORDER BY a.first_name ASC`,
+ORDER BY a.employee_name ASC`,
     (err, result) => {
       if (err) {
         console.log('error: ', err)
@@ -109,21 +194,39 @@ ORDER BY a.first_name ASC`,
   );
 });
 
-app.get('/getCurrentEmployee', (req, res, next) => {
-  db.query(`SELECT DISTINCT a.employee_id AS employee_id_duplicate
+
+app.post('/getCurrentEmployeeFromLocation', (req, res, next) => {
+  let siteIdCondition = '';
+
+  // Check if site_id is an empty string and handle it as 'IS NULL' for SQL query
+  if (req.body.site_id === '' || req.body.site_id === null || req.body.site_id === undefined ) {
+    siteIdCondition = 'AND (a.site_id = 0 OR a.site_id IS NULL)';
+  } else {
+    siteIdCondition = `AND a.site_id = ${db.escape(req.body.site_id)}`;
+  }
+
+  const query = `
+  SELECT DISTINCT a.employee_id AS employee_id_duplicate
   ,a.emp_code
   ,a.first_name
+  ,a.first_name_arb
   ,a.employee_name
   ,a.salutation
+  ,a.salutation_arb
   ,a.gender
+  ,a.gender_arb
   ,a.status
+  ,a.status_arb
   ,a.date_of_birth
   ,a.passport
   ,a.date_of_expiry
   ,a.work_permit_expiry_date
   ,a.marital_status
+  ,a.marital_status_arb
   ,a.nationality
+  ,a.nationality_arb
   ,a.citizen
+  ,a.citizen_arb
   ,a.race
   ,a.notes
   ,a.religion
@@ -135,12 +238,72 @@ app.get('/getCurrentEmployee', (req, res, next) => {
   ,a.pass_word AS login_pass_word
   ,a.user_group_id AS staff_user_group_id
   ,a.published AS staff_published
+  ,j.act_join_date
+FROM employee a
+LEFT JOIN geo_country gc ON (a.address_country = gc.country_code)
+LEFT JOIN job_information j ON (a.employee_id = j.employee_id)
+LEFT JOIN staff s ON (a.employee_id = s.employee_id)
+WHERE a.employee_id != '' AND a.status ='Current'${siteIdCondition}
+ORDER BY a.employee_name ASC  
+  `;
+
+  db.query(query, (err, result) => {
+    if (err) {
+      console.log('error: ', err);
+      return res.status(400).send({
+        data: err,
+        msg: 'failed',
+      });
+    } else {
+      return res.status(200).send({
+        data: result,
+        msg: 'Success',
+      });
+    }
+  });
+});
+
+
+app.get('/getCurrentEmployee', (req, res, next) => {
+  db.query(`SELECT DISTINCT a.employee_id AS employee_id_duplicate
+  ,a.emp_code
+  ,a.first_name
+  ,a.first_name_arb
+  ,a.employee_name
+  ,a.salutation
+  ,a.salutation_arb
+  ,a.gender
+  ,a.gender_arb
+  ,a.status
+  ,a.status_arb
+  ,a.date_of_birth
+  ,a.passport
+  ,a.date_of_expiry
+  ,a.work_permit_expiry_date
+  ,a.marital_status
+  ,a.marital_status_arb
+  ,a.nationality
+  ,a.nationality_arb
+  ,a.citizen
+  ,a.citizen_arb
+  ,a.race
+  ,a.notes
+  ,a.religion
+  ,a.project_designation
+  ,a.team
+  ,a.company_id
+  ,gc.name AS country_name
+  ,a.email AS login_email
+  ,a.pass_word AS login_pass_word
+  ,a.user_group_id AS staff_user_group_id
+  ,a.published AS staff_published
+  ,j.act_join_date
 FROM employee a
 LEFT JOIN geo_country gc ON (a.address_country = gc.country_code)
 LEFT JOIN job_information j ON (a.employee_id = j.employee_id)
 LEFT JOIN staff s ON (a.employee_id = s.employee_id)
 WHERE a.employee_id != '' AND a.status ='Current'
-ORDER BY a.first_name ASC`,
+ORDER BY a.employee_name ASC`,
     (err, result) => {
       if (err) {
         console.log('error: ', err)
@@ -162,34 +325,57 @@ app.post('/getEmployeeByID', (req, res, next) => {
   db.query(`SELECT DISTINCT a.employee_id
   ,a.emp_code
   ,a.first_name
+  ,a.first_name_arb
   ,a.employee_name
+  ,a.employee_name_arb
   ,a.salutation
+  ,a.salutation_arb
   ,a.gender
+  ,a.gender_arb
   ,a.status
+  ,a.status_arb
   ,a.date_of_birth
   ,a.passport
   ,a.date_of_expiry
   ,a.marital_status
+  ,a.marital_status_arb
   ,a.nationality
+  ,a.nationality_arb
   ,a.race
+  ,a.race_arb
   ,a.religion
+  ,a.religion_arb
   ,a.project_designation
+  ,a.project_designation_arb
   ,a.project_manager
+  ,a.project_manager_arb
   ,a.admin_staff
+  ,a.admin_staff_arb
   ,a.team
+  ,a.team_arb
   ,a.company_id
   ,a.notes
+  ,a.notes_arb
   ,gc.name AS country_name
   ,a.email AS login_email
+  ,a.email_arb AS login_email_arb
   ,a.pass_word AS login_pass_word
   ,a.user_group_id AS staff_user_group_id
-  ,a.published AS staff_published
+  ,a.published 
+  ,a.published_arb
+  ,j.act_join_date
+  ,a.pay
+  ,a.pay_arb
+  ,a.creation_date
+  ,a.modification_date
+  ,a.created_by
+  ,a.modified_by
 FROM employee a
 LEFT JOIN geo_country gc ON (a.address_country = gc.country_code)
 LEFT JOIN job_information j ON (a.employee_id = j.employee_id)
 LEFT JOIN staff s ON (a.employee_id = s.employee_id)
 WHERE a.employee_id = ${db.escape(req.body.employee_id)}
-ORDER BY a.first_name ASC`,
+ORDER BY a.employee_name ASC`,
     (err, result) => {
       if (err) {
         console.log('error: ', err)
@@ -208,44 +394,125 @@ ORDER BY a.first_name ASC`,
 });
 
 app.post('/edit-Employee', (req, res, next) => {
-  db.query(`UPDATE employee  
-            SET first_name=${db.escape(req.body.first_name)}
-            ,salutation=${db.escape(req.body.salutation)}
-            ,gender=${db.escape(req.body.gender)}
-            ,status=${db.escape(req.body.status)}
-            ,date_of_birth=${db.escape(new Date(req.body.date_of_birth).toISOString().slice(0, 19).replace("T", " "))}
-            ,passport=${db.escape(req.body.passport)}
-            ,date_of_expiry=${db.escape(new Date(req.body.date_of_expiry).toISOString().slice(0, 19).replace("T", " "))}
-            ,marital_status=${db.escape(req.body.marital_status)}
-            ,nationality =${db.escape(req.body.nationality)}
-            ,race=${db.escape(req.body.race)}
-            ,religion=${db.escape(req.body.religion)}
-            ,project_designation =${db.escape(req.body.project_designation)}
-            ,team =${db.escape(req.body.team)}
-            ,project_manager=${db.escape(req.body.project_manager)}
-            ,email=${db.escape(req.body.login_email)}
-            ,pass_word=${db.escape(req.body.login_pass_word)}
-            ,user_group_id=${db.escape(req.body.staff_user_group_id)}
-            ,published =${db.escape(req.body.staff_published)}
-            ,notes =${db.escape(req.body.notes)}
-            ,company_id=${db.escape(req.body.company_id)}
-            WHERE employee_id = ${db.escape(req.body.employee_id)}`,
+  db.query(
+    `UPDATE employee  
+     SET employee_name=${db.escape(req.body.employee_name)},
+         employee_name_arb=${db.escape(req.body.employee_name_arb)},
+         first_name=${db.escape(req.body.first_name)},
+         creation_date=${db.escape(req.body.creation_date)},
+         created_by=${db.escape(req.body.created_by)},
+         modification_date=${db.escape(req.body.modification_date)},
+         modified_by=${db.escape(req.body.modified_by)},
+         first_name_arb=${db.escape(req.body.first_name_arb)},
+         salutation=${db.escape(req.body.salutation)},
+         salutation_arb=${db.escape(req.body.salutation_arb)},
+         emp_code=${db.escape(req.body.emp_code)},
+         emp_code_arb=${db.escape(req.body.emp_code_arb)},
+         gender=${db.escape(req.body.gender)},
+         gender_arb=${db.escape(req.body.gender_arb)},
+         status=${db.escape(req.body.status)},
+         status_arb=${db.escape(req.body.status_arb)},
+         date_of_birth=${db.escape(
+           new Date(req.body.date_of_birth).toISOString().slice(0, 19).replace("T", " ")
+         )},
+         passport=${db.escape(req.body.passport)},
+         date_of_expiry=${db.escape(
+           new Date(req.body.date_of_expiry).toISOString().slice(0, 19).replace("T", " ")
+         )},
+         marital_status=${db.escape(req.body.marital_status)},
+         marital_status_arb=${db.escape(req.body.marital_status_arb)},
+         nationality=${db.escape(req.body.nationality)},
+         nationality_arb=${db.escape(req.body.nationality_arb)},
+         race=${db.escape(req.body.race)},
+         race_arb=${db.escape(req.body.race_arb)},
+         religion=${db.escape(req.body.religion)},
+         religion_arb=${db.escape(req.body.religion_arb)},
+         project_designation=${db.escape(req.body.project_designation)},
+         project_designation_arb=${db.escape(req.body.project_designation_arb)},
+         team=${db.escape(req.body.team)},
+         team_arb=${db.escape(req.body.team_arb)},
+         team_leader=${db.escape(req.body.team_leader)},
+         team_leader_arb=${db.escape(req.body.team_leader_arb)},
+         project_manager=${db.escape(req.body.project_manager)},
+         project_manager_arb=${db.escape(req.body.project_manager_arb)},
+         email=${db.escape(req.body.login_email)},
+         email_arb=${db.escape(req.body.login_email_arb)},
+         pass_word=${db.escape(req.body.login_pass_word)},
+         pass_word_arb=${db.escape(req.body.login_pass_word_arb)},
+         user_group_id=${db.escape(req.body.staff_user_group_id)},
+         published=${db.escape(req.body.published)},
+         published_arb=${db.escape(req.body.published_arb)},
+         notes=${db.escape(req.body.notes)},
+         notes_arb=${db.escape(req.body.notes_arb)},
+         pay=${db.escape(req.body.pay)},
+         pay_arb=${db.escape(req.body.pay_arb)},
+         company_id=${db.escape(req.body.company_id)}
+     WHERE employee_id=${db.escape(req.body.employee_id)}`,
     (err, result) => {
       if (err) {
-        console.log('error: ', err)
+        console.log('error: ', err);
         return res.status(400).send({
           data: err,
           msg: 'failed',
-        })
+        });
       } else {
-        return res.status(200).send({
-          data: result,
-          msg: 'Success',
-            });
+        // Check if email, password, and published = 1
+        if (
+          req.body.login_email &&
+          req.body.login_pass_word &&
+          req.body.published === 1
+        ) {
+          // Check if the staff record already exists
+          const checkStaffQuery = `
+            SELECT * FROM staff WHERE employee_id = ${db.escape(req.body.employee_id)}
+          `;
+          db.query(checkStaffQuery, (checkErr, checkResult) => {
+            if (checkErr) {
+              console.log('error checking staff record: ', checkErr);
+              return res.status(400).send({
+                data: checkErr,
+                msg: 'failed to check staff record',
+              });
+            } else if (checkResult.length > 0) {
+              // Staff record already exists
+              return res.status(200).send({
+                data: result,
+                msg: 'Employee updated successfully, staff record already exists',
+              });
+            } else {
+              // Insert new staff record
+              const staffQuery = `
+                INSERT INTO staff (employee_id, email, pass_word, first_name,user_group_id)
+                VALUES (${db.escape(req.body.employee_id)}, ${db.escape(req.body.login_email)}, ${db.escape(req.body.login_pass_word)}, ${db.escape(req.body.employee_name)},     ${db.escape(req.body.staff_user_group_id)}
+)
+              `;
+              db.query(staffQuery, (staffErr, staffResult) => {
+                if (staffErr) {
+                  console.log('error creating staff record: ', staffErr);
+                  return res.status(400).send({
+                    data: staffErr,
+                    msg: 'failed to create staff record',
+                  });
+                } else {
+                  return res.status(200).send({
+                    data: result,
+                    msg: 'Employee updated and staff record created successfully',
+                  });
+                }
+              });
+            }
+          });
+        } else {
+          return res.status(200).send({
+            data: result,
+            msg: 'Employee updated successfully',
+          });
+        }
       }
-     }
+    }
   );
 });
+
 
 app.post('/edit-notes',(req, res, next) => {
   db.query(`UPDATE employee  
@@ -276,7 +543,7 @@ app.post('/insertEmployee', (req, res, next) => {
     , address_area: req.body.address_area
     , address_town: req.body.address_town
     , address_state: req.body.address_state
-    , address_country: "Singapore"
+    , address_country: req.body.address_country
     , address_po_code: req.body.address_po_code
     , phone: req.body.phone
     , fax: req.body.fax
@@ -293,7 +560,7 @@ app.post('/insertEmployee', (req, res, next) => {
     , known_as_name: req.body.known_as_name
     , address_street1: req.body.address_street1
     , address_town1 : req.body. address_town1 
-    , address_country1: "Singapore"
+    , address_country1: req.body. address_country1 
     , flag: req.body.flag
     , sex: req.body.sex
     , date_of_birth: new Date(req.body.date_of_birth)
@@ -339,7 +606,7 @@ app.post('/insertEmployee', (req, res, next) => {
     , foreign_addrs_area: req.body.foreign_addrs_area
     ,  foreign_addrs_city : req.body. foreign_addrs_city 
     , foreign_addrs_postal_code: req.body.foreign_addrs_postal_code
-    , foreign_addrs_country : "Singapore"
+    , foreign_addrs_country : req.body.foreign_addrs_country
     , emergency_contact_name: req.body.emergency_contact_name
     , emergency_contact_phone: req.body.emergency_contact_phone
     , emergency_contact_phone2: req.body.emergency_contact_phone2
@@ -359,7 +626,7 @@ app.post('/insertEmployee', (req, res, next) => {
     , is_citizen: req.body.is_citizen
     , race: req.body.race
     , employee_group : req.body. employee_group 
-    , first_name: req.body.first_name
+    , employee_name: req.body.employee_name
     , last_name: req.body.last_name
     , foreign_mobile : req.body. foreign_mobile 
     , foreign_email: req.body.foreign_email
@@ -453,6 +720,30 @@ app.post('/getTabPassTypeByID', (req, res, next) => {
   ,work_permit
   ,work_permit_expiry_date
   from employee where employee_id = ${db.escape(req.body.employee_id)}`,
+    (err, result) => {
+      if (err) {
+        console.log('error: ', err)
+        return res.status(400).send({
+          data: err,
+          msg: 'failed',
+        })
+      } else {
+        return res.status(200).send({
+          data: result,
+          msg: 'Success',
+            });
+      }
+    }
+  );
+});
+
+app.post('/Checkedduplicatevalue', (req, res, next) => {
+  db.query(` SELECT *
+    FROM employee
+    WHERE (
+      (nric_no = ${db.escape(req.body.nric_no)} OR fin_no = ${db.escape(req.body.fin_no)} OR work_permit = ${db.escape(req.body.work_permit)})
+      
+    );`,
     (err, result) => {
       if (err) {
         console.log('error: ', err)
@@ -663,6 +954,7 @@ app.post('/edit-ContactInformation', (req, res, next) => {
             SET address_area=${db.escape(req.body.address_area)}
             ,address_street=${db.escape(req.body.address_street)}
             ,address_po_code=${db.escape(req.body.address_po_code)}
+            ,address_country1="Singapore"
             ,mobile=${db.escape(req.body.mobile)}
             ,phone=${db.escape(req.body.phone)}
             ,email=${db.escape(req.body.email)}
@@ -891,6 +1183,26 @@ ORDER BY ts.to_date DESC `,
   );
 });
 
+app.post('/deleteEmployeeTime', (req, res, next) => {
+  let data = { employee_timesheet_id: req.body.employee_timesheet_id }
+  let sql = 'DELETE FROM employee_timesheet WHERE ?'
+  let query = db.query(sql, data, (err, result) => {
+    if (err) {
+      console.log('error: ', err)
+      return res.status(400).send({
+        data: err,
+        msg: 'failed',
+      })
+    } else {
+      return res.status(200).send({
+        data: result,
+        msg: 'Tender has been removed successfully',
+      })
+    }
+  })
+})
+
+
 app.get('/getMaxEmpCode', (req, res, next) => {
   db.query(`SELECT MAX (emp_code) As empc
   FROM employee
@@ -935,6 +1247,25 @@ app.get('/getQualification', (req, res, next) => {
     },
   )
 })
+
+app.get('/getTranslationForEmployee', (req, res, next) => {
+  db.query(`SELECT t.value,t.key_text,t.arb_value FROM translation t WHERE key_text LIKE 'mdEmployee%'`,
+  (err, result) => {
+    if (err) {
+      console.log('error: ', err)
+      return res.status(400).send({
+        data: err,
+        msg: 'failed',
+      })
+    } else {
+      return res.status(200).send({
+        data: result,
+        msg: 'Success',
+})
+}
+  }
+);
+});
 
 app.get('/secret-route', userMiddleware.isLoggedIn, (req, res, next) => {
   console.log(req.userData);

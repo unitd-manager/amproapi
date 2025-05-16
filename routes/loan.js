@@ -46,6 +46,71 @@ app.get("/getLoanOld", (req, res, next) => {
     }
   );
 });
+app.get('/getTranslationforHRLoan', (req, res, next) => {
+  db.query(`SELECT t.value,t.key_text,t.arb_value FROM translation t WHERE key_text LIKE 'mdHRLoan%'`,
+  (err, result) => {
+    if (err) {
+      console.log('error: ', err)
+      return res.status(400).send({
+        data: err,
+        msg: 'failed',
+      })
+    } else {
+      return res.status(200).send({
+        data: result,
+        msg: 'Success',
+})
+}
+  }
+);
+});
+
+app.post('/getLoanFromLocation', (req, res, next) => {
+  let siteIdCondition = '';
+
+  // Check if site_id is an empty string and handle it as 'IS NULL' for SQL query
+  if (req.body.site_id === '' || req.body.site_id === null || req.body.site_id === undefined ) {
+    siteIdCondition = 'AND (l.site_id = 0 OR l.site_id IS NULL)';
+  } else {
+    siteIdCondition = `AND l.site_id = ${db.escape(req.body.site_id)}`;
+  }
+
+  const query = `
+  SELECT l.employee_id
+  ,l.loan_id
+  ,l.status
+  ,l.amount
+  ,l.type
+  ,l.month_amount
+  ,l.loan_closing_date
+  ,l.notes
+  ,l.loan_start_date
+  ,l.date
+  ,e.employee_name
+  ,(SELECT SUM(loan_repayment_amount_per_month) FROM loan_repayment_history WHERE loan_id=l.loan_id) AS total_repaid_amount
+  ,(SELECT (amount- SUM(loan_repayment_amount_per_month)) FROM loan_repayment_history WHERE loan_id=l.loan_id) AS amount_payable
+  FROM loan l
+  LEFT JOIN (employee e) ON (e.employee_id = l.employee_id)
+  WHERE l.loan_id !='' ${siteIdCondition}
+  `;
+
+  db.query(query, (err, result) => {
+    if (err) {
+      console.log('error: ', err);
+      return res.status(400).send({
+        data: err,
+        msg: 'failed',
+      });
+    } else {
+      return res.status(200).send({
+        data: result,
+        msg: 'Success',
+      });
+    }
+  });
+});
+
+
 app.get("/getLoan", (req, res, next) => {
   db.query(
     `SELECT l.employee_id
@@ -86,13 +151,12 @@ app.post("/getLoanById", (req, res, next) => {
   ,l.month_amount
   ,l.loan_closing_date
   ,l.notes
+  ,l.loan_start_date
+  ,l.date
   ,l.creation_date
   ,l.modification_date
   ,l.created_by
   ,l.modified_by
-  
-  ,l.loan_start_date
-  ,l.date
   ,e.employee_name
   ,sum(loan_repayment_amount_per_month) AS total_repaid_amount
   ,(SELECT (amount- SUM(loan_repayment_amount_per_month)) FROM loan_repayment_history WHERE loan_id=l.loan_id) AS amount_payable
@@ -116,7 +180,7 @@ app.post("/getLoanById", (req, res, next) => {
 
 app.get("/TabEmployee", (req, res, next) => {
   db.query(
-    `SELECT employee_name,employee_id FROM employee e;`,
+    `SELECT employee_name,employee_id FROM employee `,
     (err, result) => {
       if (err) {
         console.log("error: ", err);
@@ -160,6 +224,8 @@ app.post("/edit-Loan", (req, res, next) => {
             ,status=${db.escape(req.body.status)}
             ,notes=${db.escape(req.body.notes)}
             ,date=${db.escape(req.body.date)}
+            ,modification_date=${db.escape(req.body.modification_date)}
+            ,modified_by=${db.escape(req.body.modified_by)}
             ,type=${db.escape(req.body.type)}
             ,employee_id=${db.escape(req.body.employee_id)}
             WHERE loan_id = ${db.escape(req.body.loan_id)}`,
@@ -264,23 +330,15 @@ app.post("/insertLoan", (req, res, next) => {
   let data = {
     date: req.body.date,
     amount: req.body.amount,
-    //loan_id: req.body.loan_id,
     employee_id: req.body.employee_id,
-    type: req.body.type,
     status: "Applied",
-    due_date: req.body.due_date,
     creation_date: req.body.creation_date,
     modification_date: req.body.modification_date,
+    site_id: req.body.site_id,
     created_by: req.body.created_by,
     modified_by: req.body.modified_by,
-    flag: req.body.flag,
-    no_of_months: req.body.no_of_months,
-    deduction: req.body.deduction,
-    approved_by: req.body.approved_by,
-    loan_closing_date: req.body.loan_closing_date,
     month_amount: req.body.month_amount,
-    loan_start_date: req.body.loan_start_date,
-    notes: req.body.notes
+
   };
   let sql = "INSERT INTO loan SET ?";
   let query = db.query(sql, data, (err, result) => {
@@ -313,6 +371,79 @@ app.post("/deleteLoan", (req, res, next) => {
   });
 });
 
+app.post('/getEmployeesites', (req, res, next) => {
+  db.query(`SELECT 
+  e.employee_id
+ ,e.first_name
+ ,e.employee_name
+ ,e.employee_name_arb
+ ,e.nric_no
+ ,e.nric_no_arb
+ ,e.fin_no
+ ,e.fin_no_arb
+ ,(SELECT COUNT(*) FROM job_information ji WHERE ji.employee_id=e.employee_id AND ji.status='current') AS e_count
+  FROM employee e
+  Where site_id = ${db.escape(req.body.site_id)}`,
+    (err, result) => {
+      if (err) {
+        console.log('error: ', err)
+        return res.status(400).send({
+          data: err,
+          msg: 'failed',
+        })
+      } else {
+        return res.status(200).send({
+          data: result,
+          msg: 'Success',
+
+            });
+
+        }
+ 
+    }
+  );
+});
+
+app.post('/getEmployeesite', (req, res, next) => {
+  let siteIdCondition = '';
+
+  // Check if site_id is an empty string and handle it as 'IS NULL' for SQL query
+  if (req.body.site_id === '' || req.body.site_id === null || req.body.site_id === undefined ) {
+    siteIdCondition = 'AND (e.site_id = 0 OR e.site_id IS NULL)';
+  } else {
+    siteIdCondition = `AND e.site_id = ${db.escape(req.body.site_id)}`;
+  }
+
+  const query = `
+  SELECT 
+  e.employee_id
+ ,e.first_name
+ ,e.employee_name
+ ,e.employee_name_arb
+ ,e.nric_no
+ ,e.nric_no_arb
+ ,e.fin_no
+ ,e.fin_no_arb
+ ,(SELECT COUNT(*) FROM job_information ji WHERE ji.employee_id=e.employee_id AND ji.status='current') AS e_count
+  FROM employee e
+  Where employee_id != '' ${siteIdCondition}
+  `;
+
+  db.query(query, (err, result) => {
+    if (err) {
+      console.log('error: ', err);
+      return res.status(400).send({
+        data: err,
+        msg: 'failed',
+      });
+    } else {
+      return res.status(200).send({
+        data: result,
+        msg: 'Success',
+      });
+    }
+  });
+});
 app.post("/getTotalAmount", (req, res, next) => {
   db.query(
          `SELECT SUM(loan_repayment_amount_per_month) AS total_repaid_amount

@@ -160,6 +160,111 @@ app.post("/getProductsPagination", (req, res, next) => {
   });
 });
 
+app.post("/getCodeValue", (req, res, next) => {
+  var type = req.body.type;
+  let sql = '';
+  let key_text = '';
+  let withprefix = true;
+  if(type == 'opportunity'){
+      key_text = 'nextOpportunityCode';
+      sql = "SELECT * FROM setting WHERE key_text='opportunityCodePrefix' OR key_text='nextOpportunityCode'";
+  }else if(type == 'receipt'){
+      key_text = 'nextReceiptCode';
+      sql = "SELECT * FROM setting WHERE key_text='receiptCodePrefix' OR key_text='nextReceiptCode'";
+  }else if(type == 'lead'){
+      key_text = 'nextLeadsCode';
+      sql = "SELECT * FROM setting WHERE key_text='leadsPrefix' OR key_text='nextLeadsCode'";  
+  }else if(type == 'invoice'){
+      key_text = 'nextInvoiceCode';
+    sql = "SELECT * FROM setting WHERE key_text='invoiceCodePrefix' OR key_text='nextInvoiceCode'";  
+  }else if(type == 'subConworkOrder'){
+      key_text = 'nextSubconCode';
+    sql = "SELECT * FROM setting WHERE key_text='subconCodePrefix' OR key_text='nextSubconCode'";  
+  }
+  else if(type == 'project'){
+      key_text = 'nextProjectCode';
+      sql = "SELECT * FROM setting WHERE key_text='projectCodePrefix' OR key_text='nextProjectCode'";  
+  }else if(type == 'opportunityproject'){
+      key_text = 'nextOpportunityProjectCode';
+      sql = "SELECT * FROM setting WHERE key_text='opportunityprojectCodePrefix' OR key_text='nextOpportunityProjectCode'";  
+  }else if(type == 'quote'){
+      key_text = 'nextQuoteCode';
+      sql = "SELECT * FROM setting WHERE key_text='quoteCodePrefix' OR key_text='nextQuoteCode'";  
+  }
+  else if(type == 'creditNote'){
+      key_text = 'nextCreditNoteCode';
+      sql = "SELECT * FROM setting WHERE key_text='creditNotePrefix' OR key_text='nextCreditNoteCode'";  
+  }else if(type == 'employee'){
+    //   withprefix = false;
+      key_text = 'nextEmployeeCode';
+    sql = "SELECT * FROM setting WHERE key_text='employeeCodePrefix' OR key_text='nextEmployeeCode'";  
+  }
+  else if(type == 'claim'){
+      withprefix = false;
+      key_text = 'nextClaimCode';
+      sql = "SELECT * FROM setting WHERE  key_text='nextClaimCode'";  
+  }
+  else if(type == 'QuoteCodeOpp'){
+      withprefix = false;
+      key_text = 'nextQuoteCodeOpp';
+      sql = "SELECT * FROM setting WHERE  key_text='nextQuoteCodeOpp'";  
+  }
+  else if(type == 'wocode'){
+      key_text = 'nextWOCode';
+      sql = "SELECT * FROM setting WHERE key_text='wOCodePrefix' OR key_text='nextWOCode'";  
+  }
+  else if(type == 'ProductCode'){
+      key_text = 'nextProductCode';
+      sql = "SELECT * FROM setting WHERE key_text='nextProductCodePrefix' OR key_text='nextProductCode'";  
+  }
+  else if(type == 'InventoryCode'){
+      key_text = 'nextInventoryCode';
+      sql = "SELECT * FROM setting WHERE key_text='inventoryCodePrefix' OR key_text='nextInventoryCode'";  
+  }
+  else if(type == 'ItemCode'){
+      withprefix = false;
+      key_text = 'nextItemCode';
+      sql = "SELECT * FROM setting WHERE key_text='nextItemCode'"; 
+  }
+  let query = db.query(sql, (err, result) => {
+      let old = result
+    if (err) {
+      return res.status(400).send({
+        data: err,
+        msg: "failed",
+      });
+    } else {
+       
+        var finalText = '';
+        var newvalue = 0
+        if(withprefix == true){
+            var codeObject = result.filter(obj => obj.key_text === key_text);
+            
+             var prefixObject = result.filter(obj => obj.key_text != key_text);
+            finalText = prefixObject[0].value + codeObject[0].value;
+            newvalue = parseInt(codeObject[0].value) + 1
+        }else{
+            finalText = result[0].value
+            newvalue = parseInt(result[0].value) + 1
+        }
+        newvalue = newvalue.toString()
+         let query = db.query(`UPDATE setting SET value=${db.escape(newvalue)} WHERE key_text = ${db.escape(key_text)}`, (err, result) => {
+            if (err) {
+              return res.status(400).send({
+                data: err,
+                msg: "failed",
+              });
+            } else {
+              return res.status(200).send({
+                data: finalText,
+                result:old
+              });
+            }
+        });
+    }
+  });
+});
+
 app.get("/getColorValueList", (req, res, next) => {
   db.query(
     `SELECT 
@@ -174,6 +279,29 @@ app.get("/getColorValueList", (req, res, next) => {
         return res.status(200).send({
           data: result,
           msg: "Success",
+        });
+      }
+    }
+  );
+});
+
+app.get('/getUnitFromValueList', (req, res, next) => {
+  db.query(
+    `SELECT 
+  value
+  ,valuelist_id
+  FROM valuelist WHERE key_text='UoM'`,
+    (err, result) => {
+      if (err) {
+        console.log('error: ', err);
+        return res.status(400).send({
+          data: err,
+          msg: 'failed',
+        });
+      } else {
+        return res.status(200).send({
+          data: result,
+          msg: 'Success',
         });
       }
     }
@@ -291,6 +419,153 @@ app.get("/getAllProducts", (req, res, next) => {
   );
 });
 
+app.post("/getProductUOM", (req, res) => {
+  const { product_id } = req.body;
+  db.query(
+    `SELECT uom_id, product_id, barcode, description, pcs_per_carton, retail_price, carton_price 
+     FROM product_uom 
+     WHERE product_id = ?`,
+    [product_id],
+    (err, result) => {
+      if (err) {
+        console.log("Error fetching UOMs: ", err);
+        return res.status(400).send({ msg: "Failed", data: err });
+      } else {
+        return res.status(200).send({ msg: "Success", data: result });
+      }
+    }
+  );
+});
+
+app.post("/addProductUOM", (req, res) => {
+  const {
+    product_id,
+    barcode,
+    description,
+    pcs_per_carton,
+    retail_price,
+    carton_price,
+  } = req.body;
+
+  db.query(
+    `INSERT INTO product_uom 
+     (product_id, barcode, description, pcs_per_carton, retail_price, carton_price) 
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [product_id, barcode, description, pcs_per_carton, retail_price, carton_price],
+    (err, result) => {
+      if (err) {
+        console.log("Error inserting UOM: ", err);
+        return res.status(400).send({ msg: "Insert failed", data: err });
+      } else {
+        return res.status(200).send({ msg: "Insert successful", data: result });
+      }
+    }
+  );
+});
+ 
+ app.post("/deleteProductUOM", (req, res) => {
+  const { uom_id } = req.body;
+
+  db.query(
+    `DELETE FROM product_uom WHERE uom_id = ?`,
+    [uom_id],
+    (err, result) => {
+      if (err) {
+        console.log("Error deleting UOM: ", err);
+        return res.status(400).send({ msg: "Delete failed", data: err });
+      } else {
+        return res.status(200).send({ msg: "Delete successful", data: result });
+      }
+    }
+  );
+});
+
+app.post('/updateProductUOM', (req, res) => {
+  const { uom_id, barcode, description, pcs_per_carton, retail_price, carton_price } = req.body;
+
+  const query = `
+    UPDATE product_uom
+    SET barcode = ?, description = ?, pcs_per_carton = ?, retail_price = ?, carton_price = ?
+    WHERE uom_id = ?
+  `;
+
+  db.query(query, [barcode, description, pcs_per_carton, retail_price, carton_price, uom_id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error updating UOM' });
+    res.json({ message: 'UOM updated successfully' });
+  });
+});  
+
+app.post('/getProductVariations', (req, res) => {
+  const { product_id } = req.body;
+  const query = `SELECT * FROM product_variation WHERE product_id = ?`;
+
+  db.query(query, [product_id], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Error fetching variations' });
+    res.json({ data: results });
+  });
+});
+
+app.post('/addProductVariation', (req, res) => {
+  const {
+    product_id,
+    child_product_code,
+    child_product_name,
+    variation_name,
+    qty,
+    variation_price,
+  } = req.body;
+
+  const query = `
+    INSERT INTO product_variation
+    (product_id, child_product_code, child_product_name, variation_name, qty, variation_price)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(
+    query,
+    [product_id, child_product_code, child_product_name, variation_name, qty, variation_price],
+    (err, result) => {
+      if (err) return res.status(500).json({ message: 'Error adding variation' });
+      res.json({ message: 'Variation added successfully' });
+    }
+  );
+});
+
+app.post('/updateProductVariation', (req, res) => {
+  const {
+    variation_id,
+    child_product_code,
+    child_product_name,
+    variation_name,
+    qty,
+    variation_price,
+  } = req.body;
+
+  const query = `
+    UPDATE product_variation
+    SET child_product_code = ?, child_product_name = ?, variation_name = ?, qty = ?, variation_price = ?
+    WHERE variation_id = ?
+  `;
+
+  db.query(
+    query,
+    [child_product_code, child_product_name, variation_name, qty, variation_price, variation_id],
+    (err, result) => {
+      if (err) return res.status(500).json({ message: 'Error updating variation' });
+      res.json({ message: 'Variation updated successfully' });
+    }
+  );
+});
+
+app.post('/deleteProductVariation', (req, res) => {
+  const { variation_id } = req.body;
+  const query = 'DELETE FROM product_variation WHERE variation_id = ?';
+
+  db.query(query, [variation_id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error deleting variation' });
+    res.json({ message: 'Variation deleted successfully' });
+  });
+});
 
 
 app.get("/getOfferProducts", (req, res, next) => {
@@ -1330,6 +1605,9 @@ app.get("/getProducts", (req, res, next) => {
   ,p.description_short
   ,p.general_quotation
   ,p.unit
+  ,p.wholesale_price
+  ,p.carton_price
+  ,p.pcs_per_carton
   ,p.product_group_id
   ,p.item_code
   ,p.modified_by
@@ -1377,12 +1655,10 @@ app.get("/getProductAdmin", (req, res, next) => {
   db.query(
     `SELECT DISTINCT p.product_id
   ,p.category_id
-  ,p.alternative_product_name 
-  ,p.purchase_unit_cost 	
   ,p.sub_category_id
   ,p.title
-  ,p.description
-  ,p.qty_in_stock
+  ,p.description,
+  p.qty_in_stock
   ,p.price
   ,p.published
   ,p.creation_date
@@ -1411,26 +1687,11 @@ app.get("/getProductAdmin", (req, res, next) => {
   ,p.discount_from_date
   ,p.discount_to_date
   ,p.tag
-  ,p.ecommerce_price
-  ,p.retail_price
-  ,p.wholesale_price
-  ,p.department_id
-  ,p.unit
-  ,p.part_number 
-  ,p.carton_price
-  ,p.carton_qty
-  ,p.loose_qty
-  ,p.department_id
-  ,p.supplier_id
-  ,d.department_name
-  ,s.company_name
   ,i.inventory_id
    ,GROUP_CONCAT(m.file_name) AS images
     from product p
      LEFT JOIN media m ON (p.product_id = m.record_id) 
      LEFT JOIN inventory i ON p.product_id = i.product_id
-     LEFT JOIN department d ON d.department_id = p.department_id
-     LEFT JOIN supplier s  ON s.supplier_id = p.supplier_id
     where p.product_id != ''
      GROUP BY p.product_id `,
     (err, result) => {
@@ -1616,51 +1877,11 @@ app.post("/getProduct", (req, res, next) => {
     ,p.sales_part_number
     ,p.igst
     ,p.tag
-    ,p.ecommerce_price
-    ,p.retail_price
-  ,p.wholesale_price
-  ,p.department_id
-  ,p.unit
-  ,p.part_number 
-  ,p.carton_price
-  ,p.carton_qty
-  ,p.department_id
-  ,p.sub_category_id
-  ,p.brand_id
-  ,p.display_order
-  ,p.purchase_uom
-  ,p.sales_uom
-  ,p.pcs_per_carton
-  ,p.product_weight 
-  ,p.purchase_unit_cost
-  ,p.operation_cost
-  ,p.min_retail_price
-  ,p.min_wholesale_price
-  ,p.min_carton_price
-  ,p.style_fabric
-  ,p.carton_weight
-  ,p.m3_per_carton
-  ,p.bin
-  ,p.remarks
-  ,p.show_on_purchase
-  ,p.show_on_sales
-  ,p.is_active
-  ,p.eprocurement
-  ,p.ecommerce
-  ,p.show_on_pos
-  ,p.tax_percentage
-  ,p.model_no
-  ,b.brand_name
-  ,s.sub_category_title
-  ,d.department_name
     ,p.created_by
     ,p.modified_by
      ,GROUP_CONCAT(m.file_name) AS images
     from product p
      LEFT JOIN media m ON (p.product_id = m.record_id)
-     LEFT JOIN department d ON (d.department_id = p.department_id)
-     LEFT JOIN brand b ON (b.brand_id = p.brand_id)
-     LEFT JOIN sub_category s ON (s.sub_category_id = p.sub_category_id)
     where p.product_id = ${db.escape(req.body.product_id)}
      GROUP BY p.product_id`,
     (err, result) => {
@@ -1810,7 +2031,7 @@ app.post("/edit-Product", (req, res, next) => {
             ,qty_in_stock=${db.escape(req.body.qty_in_stock)}
            ,unit=${db.escape(req.body.unit)}
             ,alternative_product_name=${db.escape(req.body.alternative_product_name)}
-            ,brand_id=${db.escape(req.body.brand_id)}
+            ,brand=${db.escape(req.body.brand)}
            ,keyword_search=${db.escape(req.body.keyword_search)}
             ,gst=${db.escape(req.body.gst)}
             ,description_short=${db.escape(req.body.description_short)}
@@ -1819,38 +2040,6 @@ app.post("/edit-Product", (req, res, next) => {
             ,modification_date=${db.escape(req.body.modification_date)}
             ,modified_by=${db.escape(req.body.modified_by)}
             ,tag=${db.escape(req.body.tag)}
-            ,operation_cost=${db.escape(req.body.operation_cost)}
-            ,min_retail_price=${db.escape(req.body.min_retail_price)}
-             ,min_wholesale_price=${db.escape(req.body.min_wholesale_price)}
-              ,min_carton_price=${db.escape(req.body.min_carton_price)}
-              ,style_fabric=${db.escape(req.body.style_fabric)}
-              ,carton_weight=${db.escape(req.body.carton_weight)}
-            ,m3_per_carton=${db.escape(req.body.m3_per_carton)}
-            ,bin=${db.escape(req.body.bin)}
-            ,remarks=${db.escape(req.body.remarks)}
-            ,show_on_purchase=${db.escape(req.body.show_on_purchase)}
-           ,show_on_sales=${db.escape(req.body.show_on_sales)}
-            ,is_active=${db.escape(req.body.is_active)}
-            ,eprocurement=${db.escape(req.body.eprocurement)}
-            ,ecommerce=${db.escape(req.body.ecommerce)}
-           ,show_on_pos=${db.escape(req.body.show_on_pos)}
-            ,tax_percentage=${db.escape(req.body.tax_percentage)}
-            ,carton_price=${db.escape(req.body.carton_price)}
-            ,model_no=${db.escape(req.body.model_no)}
-            ,modification_date=${db.escape(req.body.modification_date)}
-            ,modified_by=${db.escape(req.body.modified_by)}
-            ,purchase_uom=${db.escape(req.body.purchase_uom)}
-            ,sales_uom=${db.escape(req.body.sales_uom)}
-            ,pcs_per_carton=${db.escape(req.body.pcs_per_carton)}
-            ,purchase_unit_cost=${db.escape(req.body.purchase_unit_cost)}
-            ,retail_price=${db.escape(req.body.retail_price)}
-            ,wholesale_price=${db.escape(req.body.wholesale_price)}
-            ,sub_category_id=${db.escape(req.body.sub_category_id)}
-            ,department_id=${db.escape(req.body.department_id)}
-            ,supplier_id=${db.escape(req.body.supplier_id)}
-            ,display_order=${db.escape(req.body.display_order)}
-            ,pcs_per_carton=${db.escape(req.body.pcs_per_carton)}
-            ,product_weight=${db.escape(req.body.product_weight)}
             WHERE product_id =  ${db.escape(req.body.product_id)}`,
     (err, result) => {
       if (err) {
@@ -2053,14 +2242,7 @@ app.post('/insertProduct', (req, res, next) => {
     , discount_from_date: req.body.discount_from_date
     , tag : req.body. tag 
     , discount_to_date: req.body.discount_to_date
-    , mrp: req.body.mrp
-    , show_on_purchase: 0
-    , show_on_sales : 0
-    , is_active: 0
-    , eprocurement : 0 
-    , ecommerce: 0
-    , show_on_pos: 0
-  };
+    , mrp: req.body.mrp};
   let sql = "INSERT INTO product SET ?";
   let query = db.query(sql, data, (err, result) => {
     if (err) {
@@ -2212,97 +2394,9 @@ app.get("/getCategory", (req, res, next) => {
   );
 });
 
-app.get("/getSubCategory", (req, res, next) => {
-  db.query(
-    `SELECT sub_category_id
-  ,sub_category_title
-  FROM sub_category 
-  WHERE sub_category_id !='' `,
-    (err, result) => {
-      if (err) {
-        console.log("error: ", err);
-        return res.status(400).send({
-          data: err,
-          msg: "failed",
-        });
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: "Success",
-        });
-      }
-    }
-  );
-});
 
-app.get("/getBrand", (req, res, next) => {
-  db.query(
-    `SELECT brand_id
-  ,brand_name
-  FROM brand 
-  WHERE brand_id !='' `,
-    (err, result) => {
-      if (err) {
-        console.log("error: ", err);
-        return res.status(400).send({
-          data: err,
-          msg: "failed",
-        });
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: "Success",
-        });
-      }
-    }
-  );
-});
 
-app.get("/getDepartment", (req, res, next) => {
-  db.query(
-    `SELECT department_id
-  ,department_name
-  FROM department 
-  WHERE department_id !='' `,
-    (err, result) => {
-      if (err) {
-        console.log("error: ", err);
-        return res.status(400).send({
-          data: err,
-          msg: "failed",
-        });
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: "Success",
-        });
-      }
-    }
-  );
-});
 
-app.get("/getSupplier", (req, res, next) => {
-  db.query(
-    `SELECT supplier_id
-  ,company_name
-  FROM supplier 
-  WHERE supplier_id !='' `,
-    (err, result) => {
-      if (err) {
-        console.log("error: ", err);
-        return res.status(400).send({
-          data: err,
-          msg: "failed",
-        });
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: "Success",
-        });
-      }
-    }
-  );
-});
 
 
 app.get("/getMaxItemCode", (req, res, next) => {
@@ -2326,106 +2420,6 @@ app.get("/getMaxItemCode", (req, res, next) => {
     }
   );
 });
-
-app.post("/EditCSProductLineItems", (req, res, next) => {
-  db.query(
-    `UPDATE cs_product 
-            SET contact_id=${db.escape(req.body.contact_id)}
-            ,supplier_id=${db.escape(req.body.supplier_id)}
-             ,updated_at =${db.escape(req.body.updated_at )}
-              ,wholesale_price=${db.escape(req.body.wholesale_price)}
-              ,carton_price=${db.escape(req.body.carton_price)}
-              ,fixed_price=${db.escape(req.body.fixed_price)}
-            WHERE contact_id =  ${db.escape(req.body.contact_id)}`,
-    (err, result) => {
-      if (err) {
-        console.log("error: ", err);
-        return res.status(400).send({
-          data: err,
-          msg: "failed",
-        });
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: "Success",
-        });
-      }
-    }
-  );
-});
-
-app.post("/getCSSupplierProductByProductId", (req, res, next) => {
-  db.query(
-    `SELECT
-    * from cs_product
-    where product_id = ${db.escape(req.body.product_id)} AND supplier_id!=''`,
-    (err, result) => {
-      if (err) {
-        console.log("error: ", err);
-        return res.status(400).send({
-          data: err,
-          msg: "failed",
-        });
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: "Success",
-        });
-      }
-    }
-  );
-});
-
-app.post("/getCSCustomerProductByProductId", (req, res, next) => {
-  db.query(
-    `SELECT
-    * from cs_product
-    where product_id = ${db.escape(req.body.product_id)} AND contact_id !=''`,
-    (err, result) => {
-      if (err) {
-        console.log("error: ", err);
-        return res.status(400).send({
-          data: err,
-          msg: "failed",
-        });
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: "Success",
-        });
-      }
-    }
-  );
-});
-
-app.post("/EditCSProductLineItemsBYSupplierID", (req, res, next) => {
-  db.query(
-    `UPDATE cs_product 
-            SET contact_id=${db.escape(req.body.contact_id)}
-            ,supplier_id=${db.escape(req.body.supplier_id)}
-             ,updated_at =${db.escape(req.body.updated_at )}
-              ,wholesale_price=${db.escape(req.body.wholesale_price)}
-              ,carton_price=${db.escape(req.body.carton_price)}
-              ,fixed_price=${db.escape(req.body.fixed_price)}
-            WHERE supplier_id =  ${db.escape(req.body.supplier_id)}`,
-    (err, result) => {
-      if (err) {
-        console.log("error: ", err);
-        return res.status(400).send({
-          data: err,
-          msg: "failed",
-        });
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: "Success",
-        });
-      }
-    }
-  );
-});
-
-
 
 app.get("/secret-route", userMiddleware.isLoggedIn, (req, res, next) => {
   console.log(req.userData);

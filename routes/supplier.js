@@ -35,7 +35,6 @@ app.get('/getSupplier', (req, res, next) => {
   ,s.payment_details
   ,s.terms
   ,s.phone
-  ,s.supplier_code
   ,gc.name AS country_name 
   FROM supplier s LEFT JOIN (geo_country gc) ON (s.address_country = gc.country_code) WHERE s.supplier_id != ''`,
   (err, result) => {
@@ -71,9 +70,6 @@ app.post('/get-SupplierById', (req, res, next) => {
   ,s.payment_details
   ,s.terms
   ,s.phone
-  ,s.supplier_code
-  ,s.user_name
-  ,s.password
   ,gc.name AS country_name 
   ,p.payment_status
   FROM supplier s LEFT JOIN (geo_country gc) ON (s.address_country = gc.country_code)
@@ -158,20 +154,6 @@ app.post('/edit-Supplier', (req, res, next) => {
             ,address_po_code=${db.escape(req.body.address_po_code)}
             ,payment_details=${db.escape(req.body.payment_details)}
             ,terms=${db.escape(req.body.terms)}
-            ,price_group=${db.escape(req.body.price_group)}
-            ,tax=${db.escape(req.body.tax)}
-            ,contact_type=${db.escape(req.body.contact_type)}
-            ,currency=${db.escape(req.body.currency)}
-            ,remarks=${db.escape(req.body.remarks)}
-            ,area=${db.escape(req.body.area)}
-            ,credit_limit=${db.escape(req.body.credit_limit)}
-            ,cheque_print_name=${db.escape(req.body.cheque_print_name)}
-            ,company_reg_no=${db.escape(req.body.company_reg_no)}
-            ,is_active=${db.escape(req.body.is_active)}
-            ,website=${db.escape(req.body.website)}
-            ,hand_phone_no=${db.escape(req.body.hand_phone_no)}
-            ,user_name=${db.escape(req.body.user_name)}
-            ,password=${db.escape(req.body.password)}
             WHERE supplier_id =${db.escape(req.body.supplier_id)}`,
             (err, result) => {
               if (err) {
@@ -672,190 +654,6 @@ app.post('/getStatus', (req, res, next) => {
     }
   );
 });
-
-
-app.get('/getTaxDrodownFromValuelist', (req, res, next) => {
-  db.query(
-    `SELECT 
-  value
-  ,valuelist_id
-  FROM valuelist WHERE key_text='Tax'`,
-    (err, result) => {
-      if (err) {
-        console.log('error: ', err)
-        return res.status(400).send({
-          data: err,
-          msg: 'failed',
-        })
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: 'Success',
-        })
-      }
-    },
-  )
-})
-
-app.get('/getPriceGroupDrodownFromValuelist', (req, res, next) => {
-  db.query(
-    `SELECT 
-  value
-  ,valuelist_id
-  FROM valuelist WHERE key_text='Price Group'`,
-    (err, result) => {
-      if (err) {
-        console.log('error: ', err)
-        return res.status(400).send({
-          data: err,
-          msg: 'failed',
-        })
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: 'Success',
-        })
-      }
-    },
-  )
-})
-
-app.get('/getContactTypeDrodownFromValuelist', (req, res, next) => {
-  db.query(
-    `SELECT 
-  value
-  ,valuelist_id
-  FROM valuelist WHERE key_text='Contact Type'`,
-    (err, result) => {
-      if (err) {
-        console.log('error: ', err)
-        return res.status(400).send({
-          data: err,
-          msg: 'failed',
-        })
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: 'Success',
-        })
-      }
-    },
-  )
-})
-
-app.get('/getAreaDrodownFromValuelist', (req, res, next) => {
-  db.query(
-    `SELECT 
-  value
-  ,valuelist_id
-  FROM valuelist WHERE key_text='Area'`,
-    (err, result) => {
-      if (err) {
-        console.log('error: ', err)
-        return res.status(400).send({
-          data: err,
-          msg: 'failed',
-        })
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: 'Success',
-        })
-      }
-    },
-  )
-})
-
-app.get('/getTermsDrodownFromValuelist', (req, res, next) => {
-  db.query(
-    `SELECT 
-  value
-  ,valuelist_id
-  FROM valuelist WHERE key_text='Supplier Terms'`,
-    (err, result) => {
-      if (err) {
-        console.log('error: ', err)
-        return res.status(400).send({
-          data: err,
-          msg: 'failed',
-        })
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: 'Success',
-        })
-      }
-    },
-  )
-})
-
-app.get('/getCurrencyDrodownFromValuelist', (req, res, next) => {
-  db.query(
-    `SELECT 
-  value
-  ,valuelist_id
-  FROM valuelist WHERE key_text='Currency'`,
-    (err, result) => {
-      if (err) {
-        console.log('error: ', err)
-        return res.status(400).send({
-          data: err,
-          msg: 'failed',
-        })
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: 'Success',
-        })
-      }
-    },
-  )
-})
-
-app.get('/getTaxDrodownFromValuelist', (req, res, next) => {
-  db.query(
-    `SELECT 
-  value
-  ,valuelist_id
-  FROM valuelist WHERE key_text='Tax'`,
-    (err, result) => {
-      if (err) {
-        console.log('error: ', err)
-        return res.status(400).send({
-          data: err,
-          msg: 'failed',
-        })
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: 'Success',
-        })
-      }
-    },
-  )
-})
-
-app.post('/getContactBySupplierId', (req, res, next) => {
-  db.query(`SELECT * FROM contact
-  WHERE supplier_id=${db.escape(req.body.supplier_id)}`,
-  (err, result) => {
-    if (err) {
-      console.log('error: ', err)
-      return res.status(400).send({
-        data: err,
-        msg: 'failed',
-      })
-    } else {
-      return res.status(200).send({
-        data: result,
-        msg: 'Success',
-})
-}
-  }
-);
-});
-
-
 app.get('/secret-route', userMiddleware.isLoggedIn, (req, res, next) => {
   console.log(req.userData);
   res.send('This is the secret content. Only logged in users can see that!');

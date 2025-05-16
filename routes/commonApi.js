@@ -472,11 +472,6 @@ app.post("/getCodeValue", (req, res, next) => {
       key_text = 'nextWOCode';
       sql = "SELECT * FROM setting WHERE key_text='wOCodePrefix' OR key_text='nextWOCode'";  
   }
-  else if(type == 'SupplierCode'){
-    withprefix = false;
-    key_text = 'nextSupplierCode';
-    sql = "SELECT * FROM setting WHERE key_text='SupplierCodePrefix' OR key_text='nextSupplierCode'";  
-}
   let query = db.query(sql, (err, result) => {
       let old = result
     if (err) {
@@ -523,6 +518,9 @@ app.post("/getCodeValues", (req, res, next) => {
   }else if(type == 'product'){
       key_text = 'nextProductCode';
       sql = "SELECT * FROM setting WHERE key_text='productCodePrefix' OR key_text='nextProductCode'";
+  }else if(type == 'receipt'){
+      key_text = 'nextReceiptCode';
+      sql = "SELECT * FROM setting WHERE key_text='receiptCodePrefix' OR key_text='nextReceiptCode'";
   }else if(type == 'inventory'){
     key_text = 'nextInventoryCode';
     sql = "SELECT * FROM setting WHERE key_text='inventoryCodePrefix' OR key_text='nextInventoryCode'";
@@ -580,7 +578,19 @@ else if(type == 'lead'){
      
       key_text = 'nextPurchaseOrderCode';
          sql = "SELECT * FROM setting WHERE key_text='purchaseOrderCodePrefix' OR key_text='nextPurchaseOrderCode'";  
-
+  }
+   else if(type == 'ProductCode'){
+      key_text = 'nextProductCode';
+      sql = "SELECT * FROM setting WHERE key_text='nextProductCodePrefix' OR key_text='nextProductCode'";  
+  }
+  else if(type == 'InventoryCode'){
+      key_text = 'nextInventoryCode';
+      sql = "SELECT * FROM setting WHERE key_text='inventoryCodePrefix' OR key_text='nextInventoryCode'";  
+  }
+  else if(type == 'ItemCode'){
+      withprefix = false;
+      key_text = 'nextItemCode';
+      sql = "SELECT * FROM setting WHERE key_text='nextItemCode'"; 
   }
   else if(type == 'wocode'){
       key_text = 'nextWOCode';

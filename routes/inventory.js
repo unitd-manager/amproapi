@@ -366,28 +366,128 @@ app.post('/editinventoryMain', (req, res, next) => {
   );
 });
 
-app.post('/editInventoryStock', (req, res, next) => {
-  db.query(`UPDATE inventory  
-            SET actual_stock =${db.escape(req.body.qty_in_stock)}
-                
-            ,modification_date=${db.escape(new Date())}
-             WHERE product_id =  ${db.escape(req.body.product_id)}`,
-    (err, result) => {
+app.post('/editInventoryStock', (req, res) => {
+  const poProductId = req.body.po_product_id;
+  const poProductqty = req.body.qty;
+  const poProductupdate = req.body.qty;
+
+  // Fetching data from po_product table
+  const SQLPoProdPrev = `
+    SELECT product_id, qty, damage_qty, purchase_order_id, po_product_id, qty_updated
+    FROM po_product
+    WHERE po_product_id = '${poProductId}'
+  `;
+
+  db.query(SQLPoProdPrev, (err, resultPoProdPrev) => {
+    if (err) {
+      console.log('error: ', err);
+      return res.status(400).send({
+        data: err,
+        msg: 'failed',
+      });
+    }
+
+    const poProdPrev = resultPoProdPrev[0];
+
+    // Update po_product table
+    const SQLPOProduct = `
+      UPDATE po_product
+      SET qty = '${poProductqty}', qty_updated = '${poProductupdate}', status = 'closed'
+      WHERE po_product_id = '${poProductId}'
+    `;
+
+    db.query(SQLPOProduct, (err) => {
       if (err) {
-        console.log('error: ', err)
+        console.log('error: ', err);
         return res.status(400).send({
           data: err,
           msg: 'failed',
-        })
-      } else {
-        return res.status(200).send({
-          data: result,
-          msg: 'Success',
-            });
+        });
       }
-     }
-  );
+
+      // Fetching data from po_product table again
+      const SQLPoProd = `
+        SELECT product_id, qty, damage_qty, purchase_order_id, po_product_id, qty_updated
+        FROM po_product
+        WHERE po_product_id = '${poProductId}'
+      `;
+
+      db.query(SQLPoProd, (err, resultPoProd) => {
+        if (err) {
+          console.log('error: ', err);
+          return res.status(400).send({
+            data: err,
+            msg: 'failed',
+          });
+        }
+
+        const poProd = resultPoProd[0];
+
+        // Fetching data from inventory table
+        const SQLInventory = `
+          SELECT product_id, actual_stock
+          FROM inventory
+          WHERE product_id = '${poProd.product_id}'
+        `;
+
+        db.query(SQLInventory, (err, resultInventory) => {
+          if (err) {
+            console.log('error: ', err);
+            return res.status(400).send({
+              data: err,
+              msg: 'failed',
+            });
+          }
+
+          const rowInventory = resultInventory[0];
+          const qtyBatchwise = poProd.qty - poProdPrev.qty_updated;
+          const stockCalc = rowInventory.actual_stock + qtyBatchwise;
+
+          // Update product table
+          const SQLUpdateProduct = `
+            UPDATE product
+            SET qty_in_stock = ${stockCalc}
+            WHERE product_id = '${poProd.product_id}'
+          `;
+
+          db.query(SQLUpdateProduct, (err) => {
+            if (err) {
+              console.log('error: ', err);
+              return res.status(400).send({
+                data: err,
+                msg: 'failed',
+              });
+            }
+
+            // Update inventory table
+            const SQLUpdateInventory = `
+              UPDATE inventory
+              SET actual_stock = ${stockCalc}
+              WHERE product_id = '${poProd.product_id}'
+            `;
+
+            db.query(SQLUpdateInventory, (err) => {
+              if (err) {
+                console.log('error: ', err);
+                return res.status(400).send({
+                  data: err,
+                  msg: 'failed',
+                });
+              }
+
+              return res.status(200).send({
+                data: { stockCalc },
+                msg: 'Success',
+              });
+            });
+          });
+        });
+      });
+    });
+  });
 });
+
+
 
 
 app.post('/insertinventory', (req, res, next) => {

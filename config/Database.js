@@ -3,7 +3,7 @@ var db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: '',
-    database: 'ampro'
+    database: 'foodecom'
 });
 db.connect(); 
 module.exports = db;
