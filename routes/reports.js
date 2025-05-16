@@ -1514,13 +1514,13 @@ app.get('/getInvoiveByMonth', (req, res, next) => {
   db.query(`
     SELECT DATE_FORMAT(i.invoice_date, '%b %Y') AS invoice_month,
            (SUM(i.invoice_amount)) AS invoice_amount_monthly,
-           o.record_type
+           o.company_id
     FROM invoice i
-    LEFT JOIN orders o ON (o.order_id = i.order_id)
-    WHERE o.record_type != ''
+    LEFT JOIN sales_order o ON (o.sales_order_id = i.sales_order_id)
+    WHERE o.company_id != ''
       AND i.status != 'Cancelled'
       AND i.invoice_date BETWEEN ? AND ?
-      ${recordType ? 'AND o.record_type = ?' : ''}
+      ${recordType ? 'AND o.company_id = ?' : ''}
     GROUP BY DATE_FORMAT(i.invoice_date, '%Y-%m')
   `, [monthDate, currentDate, recordType], (err, result) => {
     if (err) {
@@ -1542,15 +1542,16 @@ app.get('/getInvoiveByMonth', (req, res, next) => {
 app.get("/getInvoiceByYearReport", (req, res, next) => {
   const { recordType } = req.query;
   db.query(
-    ` SELECT DATE_FORMAT(i.invoice_date, '%Y') AS invoice_year
-              ,(SUM(i.invoice_amount )) AS invoice_amount_yearly
-              ,o.record_type
-        FROM invoice i
-        LEFT JOIN sales_order o   ON (o.sales_order_id   = i.sales_order_id) 
-        where o.company_id !=''
- AND i.status != 'cancelled'
- ${recordType ? 'AND o.company_id = ?' : ''}
- GROUP BY DATE_FORMAT(i.invoice_date, '%Y'),o.company_id`
+    ` SELECT DATE_FORMAT(i.invoice_date, '%Y') AS invoice_year,
+       SUM(i.invoice_amount) AS invoice_amount_yearly,
+       o.company_id
+FROM invoice i
+LEFT JOIN sales_order o ON o.sales_order_id = i.sales_order_id
+WHERE o.company_id != ''
+  AND i.status != 'cancelled'
+  ${recordType ? 'AND o.company_id = ?' : ''}
+GROUP BY DATE_FORMAT(i.invoice_date, '%Y'), o.company_id
+`
  , [recordType], (err, result) => {
       if (err) {
         console.log("error: ", err);
