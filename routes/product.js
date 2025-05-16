@@ -2611,6 +2611,154 @@ app.get("/getSupplier", (req, res, next) => {
   );
 });
 
+app.post("/getProductUOM", (req, res) => {
+  const { product_id } = req.body;
+  db.query(
+    `SELECT uom_id, product_id, barcode, description, pcs_per_carton, retail_price, carton_price 
+     FROM product_uom 
+     WHERE product_id = ?`,
+    [product_id],
+    (err, result) => {
+      if (err) {
+        console.log("Error fetching UOMs: ", err);
+        return res.status(400).send({ msg: "Failed", data: err });
+      } else {
+        return res.status(200).send({ msg: "Success", data: result });
+      }
+    }
+  );
+});
+
+app.post("/addProductUOM", (req, res) => {
+  const {
+    product_id,
+    barcode,
+    description,
+    pcs_per_carton,
+    retail_price,
+    carton_price,
+  } = req.body;
+
+  db.query(
+    `INSERT INTO product_uom 
+     (product_id, barcode, description, pcs_per_carton, retail_price, carton_price) 
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [product_id, barcode, description, pcs_per_carton, retail_price, carton_price],
+    (err, result) => {
+      if (err) {
+        console.log("Error inserting UOM: ", err);
+        return res.status(400).send({ msg: "Insert failed", data: err });
+      } else {
+        return res.status(200).send({ msg: "Insert successful", data: result });
+      }
+    }
+  );
+});
+ 
+ app.post("/deleteProductUOM", (req, res) => {
+  const { uom_id } = req.body;
+
+  db.query(
+    `DELETE FROM product_uom WHERE uom_id = ?`,
+    [uom_id],
+    (err, result) => {
+      if (err) {
+        console.log("Error deleting UOM: ", err);
+        return res.status(400).send({ msg: "Delete failed", data: err });
+      } else {
+        return res.status(200).send({ msg: "Delete successful", data: result });
+      }
+    }
+  );
+});
+
+app.post('/updateProductUOM', (req, res) => {
+  const { uom_id, barcode, description, pcs_per_carton, retail_price, carton_price } = req.body;
+
+  const query = `
+    UPDATE product_uom
+    SET barcode = ?, description = ?, pcs_per_carton = ?, retail_price = ?, carton_price = ?
+    WHERE uom_id = ?
+  `;
+
+  db.query(query, [barcode, description, pcs_per_carton, retail_price, carton_price, uom_id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error updating UOM' });
+    res.json({ message: 'UOM updated successfully' });
+  });
+});  
+
+app.post('/getProductVariations', (req, res) => {
+  const { product_id } = req.body;
+  const query = `SELECT * FROM product_variation WHERE product_id = ?`;
+
+  db.query(query, [product_id], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Error fetching variations' });
+    res.json({ data: results });
+  });
+});
+
+app.post('/addProductVariation', (req, res) => {
+  const {
+    product_id,
+    child_product_code,
+    child_product_name,
+    variation_name,
+    qty,
+    variation_price,
+  } = req.body;
+
+  const query = `
+    INSERT INTO product_variation
+    (product_id, child_product_code, child_product_name, variation_name, qty, variation_price)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(
+    query,
+    [product_id, child_product_code, child_product_name, variation_name, qty, variation_price],
+    (err, result) => {
+      if (err) return res.status(500).json({ message: 'Error adding variation' });
+      res.json({ message: 'Variation added successfully' });
+    }
+  );
+});
+
+app.post('/updateProductVariation', (req, res) => {
+  const {
+    variation_id,
+    child_product_code,
+    child_product_name,
+    variation_name,
+    qty,
+    variation_price,
+  } = req.body;
+
+  const query = `
+    UPDATE product_variation
+    SET child_product_code = ?, child_product_name = ?, variation_name = ?, qty = ?, variation_price = ?
+    WHERE variation_id = ?
+  `;
+
+  db.query(
+    query,
+    [child_product_code, child_product_name, variation_name, qty, variation_price, variation_id],
+    (err, result) => {
+      if (err) return res.status(500).json({ message: 'Error updating variation' });
+      res.json({ message: 'Variation updated successfully' });
+    }
+  );
+});
+
+app.post('/deleteProductVariation', (req, res) => {
+  const { variation_id } = req.body;
+  const query = 'DELETE FROM product_variation WHERE variation_id = ?';
+
+  db.query(query, [variation_id], (err, result) => {
+    if (err) return res.status(500).json({ message: 'Error deleting variation' });
+    res.json({ message: 'Variation deleted successfully' });
+  });
+});
+
 
 app.get("/secret-route", userMiddleware.isLoggedIn, (req, res, next) => {
   console.log(req.userData);

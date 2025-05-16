@@ -1546,11 +1546,11 @@ app.get("/getInvoiceByYearReport", (req, res, next) => {
               ,(SUM(i.invoice_amount )) AS invoice_amount_yearly
               ,o.record_type
         FROM invoice i
-        LEFT JOIN orders o   ON (o.order_id   = i.order_id) 
-        where o.record_type!=''
+        LEFT JOIN sales_order o   ON (o.sales_order_id   = i.sales_order_id) 
+        where o.company_id !=''
  AND i.status != 'cancelled'
- ${recordType ? 'AND o.record_type = ?' : ''}
- GROUP BY DATE_FORMAT(i.invoice_date, '%Y'),o.record_type`
+ ${recordType ? 'AND o.company_id = ?' : ''}
+ GROUP BY DATE_FORMAT(i.invoice_date, '%Y'),o.company_id`
  , [recordType], (err, result) => {
       if (err) {
         console.log("error: ", err);
